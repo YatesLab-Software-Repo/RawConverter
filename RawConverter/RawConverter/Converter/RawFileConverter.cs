@@ -494,7 +494,7 @@ namespace RawConverter.Converter
                 //TextFileWriter.WriteToMSn(_ms2Writer, spec, mzDecimalPlace, intensityDecimalPlace, showPeakChargeState, showPeakResolution,_verifyWriter);
                 if (expType == ExperimentType.DIA && predictPrecursors)
                 {
-                    TextFileWriter.WriteToMSnWithDuplicates(_ms2Writer, spec, mzDecimalPlace, intensityDecimalPlace, showPeakChargeState, showPeakResolution);
+                    TextFileWriter.WriteToMSn(_ms2Writer, spec, mzDecimalPlace, intensityDecimalPlace, showPeakChargeState, showPeakResolution);
                 }
                 else
                 {
