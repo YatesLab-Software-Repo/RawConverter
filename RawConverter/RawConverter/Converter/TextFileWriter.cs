@@ -75,7 +75,7 @@ namespace RawConverter.Converter
             {
                 return;
             }
-
+            
             writer.Write("S\t" + String.Format("{0:000000}", spec.ScanNumber) + "\t"
                 + String.Format("{0:000000}", spec.ScanNumber) + "\t"
                 + Math.Round(spec.Precursors[0].Item1, mzDecimalPlace + 1) + "\n"
@@ -126,6 +126,134 @@ namespace RawConverter.Converter
                     writer.Write(" " + Math.Round(peak.Resolution, 2));
                 }
                 writer.Write("\n");
+            }
+
+            writer.Flush();
+        }
+
+        public static void WriteToMSnDIA(StreamWriter writer, MassSpectrum spec, int mzDecimalPlace,
+   int intensityDecimalPlace, bool showPeakChargeState, bool showPeakResolution)
+        {
+            if (spec.Precursors == null || spec.Precursors.Count == 0)
+            {
+                return;
+            }
+            long scanNumber = spec.ScanNumber * 10000 + 1;
+            writer.Write("S\t" + String.Format("{0:0000000000}", scanNumber) + "\t"
+                + String.Format("{0:0000000000}", scanNumber) + "\t"
+                + Math.Round(spec.Precursors[0].Item1, mzDecimalPlace + 1) + "\n"
+                + "I\tRetTime\t" + Math.Round(spec.RetentionTime, 2) + "\n"
+                + "I\tIonInjectionTime\t" + spec.IonInjectionTime + "\n"
+                + "I\tActivationType\t" + spec.ActivationMethod + "\n"
+                + "I\tInstrumentType\t" + spec.InstrumentType + "\n"
+                + "I\tTemperatureFTAnalyzer\t" + spec.TemperatureFTAnalyzer + "\n"
+                + "I\tFilter\t" + spec.Filter + "\n"
+                + "I\tPrecursorScan\t" + spec.PrecursorScanNumber + "\n"
+                + "I\tPrecursorInt\t"
+                );
+            if (!double.IsNaN(spec.PrecursorIntensity))
+            {
+                writer.Write(Math.Round(spec.PrecursorIntensity, intensityDecimalPlace) + "\n");
+            }
+            else
+            {
+                writer.Write("\n");
+            }
+
+            // if precursor(s) is/are corrected or prediected, write the corrected/predicted m/z's and charge states;
+            if (spec.PrecursorRefined)
+            {
+                foreach (Tuple<double, int> prec in spec.Precursors)
+                {
+                    writer.Write("I\tPredicted Precursor: " + Math.Round(prec.Item1, mzDecimalPlace + 1) + " x " + prec.Item2 + "\n");
+                }
+            }
+            HashSet<int> csSet = new HashSet<int>();
+            List<Tuple<double, int>> precList = new List<Tuple<double, int>>();
+
+            foreach (Tuple<double, int> prec in spec.Precursors)
+            {
+                double precMH = (prec.Item1 - Utils.PROTON_MASS) * prec.Item2 + Utils.PROTON_MASS;
+                if (csSet.Contains(prec.Item2))
+                {
+                    precList.Add(prec);
+                }
+                else
+                {
+                    csSet.Add(prec.Item2);
+                    writer.Write("Z\t" + prec.Item2 + "\t" + Math.Round(precMH, mzDecimalPlace + 1) + "\n");
+                }
+            }
+
+
+            foreach (Ion peak in spec.Peaks)
+            {
+                writer.Write(Math.Round(peak.MZ, mzDecimalPlace) + " "
+                    + Math.Round(peak.Intensity, intensityDecimalPlace));
+                if (showPeakChargeState && spec.ActivationMethod == Activation.HCD)
+                {
+                    writer.Write(" " + peak.Charge);
+                }
+                if (showPeakResolution && spec.ActivationMethod == Activation.HCD)
+                {
+                    writer.Write(" " + Math.Round(peak.Resolution, 2));
+                }
+                writer.Write("\n");
+            }
+
+            if (precList.Count() > 0)
+            {
+                foreach (Tuple<double, int> precl in precList)
+                {
+                    scanNumber++;
+                    writer.Write("S\t" + String.Format("{0:0000000000}", scanNumber) + "\t"
+                            + String.Format("{0:0000000000}", scanNumber) + "\t"
+                            + Math.Round(spec.Precursors[0].Item1, mzDecimalPlace + 1) + "\n"
+                            + "I\tRetTime\t" + Math.Round(spec.RetentionTime, 2) + "\n"
+                            + "I\tIonInjectionTime\t" + spec.IonInjectionTime + "\n"
+                            + "I\tActivationType\t" + spec.ActivationMethod + "\n"
+                            + "I\tInstrumentType\t" + spec.InstrumentType + "\n"
+                            + "I\tTemperatureFTAnalyzer\t" + spec.TemperatureFTAnalyzer + "\n"
+                            + "I\tFilter\t" + spec.Filter + "\n"
+                            + "I\tPrecursorScan\t" + spec.PrecursorScanNumber + "\n"
+                            + "I\tPrecursorInt\t"
+                            );
+                    if (!double.IsNaN(spec.PrecursorIntensity))
+                    {
+                        writer.Write(Math.Round(spec.PrecursorIntensity, intensityDecimalPlace) + "\n");
+                    }
+                    else
+                    {
+                        writer.Write("\n");
+                    }
+
+                    // if precursor(s) is/are corrected or prediected, write the corrected/predicted m/z's and charge states;
+                    if (spec.PrecursorRefined)
+                    {
+                        foreach (Tuple<double, int> prec in spec.Precursors)
+                        {
+                            writer.Write("I\tPredicted Precursor: " + Math.Round(prec.Item1, mzDecimalPlace + 1) + " x " + prec.Item2 + "\n");
+                        }
+                    }
+                    double precMH = (precl.Item1 - Utils.PROTON_MASS) * precl.Item2 + Utils.PROTON_MASS;
+
+                    writer.Write("Z\t" + precl.Item2 + "\t" + Math.Round(precMH, mzDecimalPlace + 1) + "\n");
+                    foreach (Ion peak in spec.Peaks)
+                    {
+                        writer.Write(Math.Round(peak.MZ, mzDecimalPlace) + " "
+                            + Math.Round(peak.Intensity, intensityDecimalPlace));
+                        if (showPeakChargeState && spec.ActivationMethod == Activation.HCD)
+                        {
+                            writer.Write(" " + peak.Charge);
+                        }
+                        if (showPeakResolution && spec.ActivationMethod == Activation.HCD)
+                        {
+                            writer.Write(" " + Math.Round(peak.Resolution, 2));
+                        }
+                        writer.Write("\n");
+                    }
+
+                }
             }
 
             writer.Flush();

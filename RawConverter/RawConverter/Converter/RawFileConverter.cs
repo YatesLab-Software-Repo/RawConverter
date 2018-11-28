@@ -74,6 +74,7 @@ namespace RawConverter.Converter
 
         private double DEFAULT_DIA_ISO_WIN_SIZE = 10;
 
+        private HashSet<String> scanSet = new HashSet<String>();
         //Collection 
         private Dictionary<int, int> chargeNum = new Dictionary<int, int>();
 
@@ -494,7 +495,7 @@ namespace RawConverter.Converter
                 //TextFileWriter.WriteToMSn(_ms2Writer, spec, mzDecimalPlace, intensityDecimalPlace, showPeakChargeState, showPeakResolution,_verifyWriter);
                 if (expType == ExperimentType.DIA && predictPrecursors)
                 {
-                    TextFileWriter.WriteToMSn(_ms2Writer, spec, mzDecimalPlace, intensityDecimalPlace, showPeakChargeState, showPeakResolution);
+                    TextFileWriter.WriteToMSnDIA(_ms2Writer, spec, mzDecimalPlace, intensityDecimalPlace, showPeakChargeState, showPeakResolution);
                 }
                 else
                 {
