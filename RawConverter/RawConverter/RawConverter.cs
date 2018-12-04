@@ -204,7 +204,7 @@ namespace RawConverter
                             return;
                         }
                     }
-                    
+
                 }
 
                 // check the output folder;
@@ -276,22 +276,31 @@ namespace RawConverter
             outFileTypes = new string[outFileTypeList.Count];
             outFileTypeList.CopyTo(outFileTypes);
 
-            // convert files one by one;
+            // Convert Files Parallel.
+
+            List<Task> tasks = new List<Task>();
             for (int idx = 0; idx < inputFiles.Count; idx++)
             {
-                ConvertFile(inputFiles[idx], idx);
-                if (ExtractProgress.CurrentProgress < 100)
+                var input = inputFiles[idx];
+                var index = idx;
+                Parallel.Invoke(() =>
+                tasks.Add(Task.Factory.StartNew(() => ConvertFile(input, index)).ContinueWith((antecedent) =>
                 {
-                    terminateCode = -2;
-                    break;
-                }
-            }
-            if (terminateCode > 0)
-            {
-                terminateCode = 0;
-            } 
+                    if (ExtractProgress.CurrentProgress < 100)
+                    {
+                        terminateCode = -2;
+                    }
 
+                    if (terminateCode > 0)
+                    {
+                        terminateCode = 0;
+                    }
+
+                })));
+            }
+            Task.WaitAll(tasks.ToArray());
         }
+
 
         /// <summary>
         /// Reset the terminating code to 1, which indicates an un-finished status for next-time use.
@@ -353,8 +362,8 @@ namespace RawConverter
                 LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
                 ByPassThermoAlgorithm = true;
                 RawFileConverter rc = new RawFileConverter(inFile, OutFileFolder, outFileTypes, ExpType, exportChargeState);
-                rc.SetOptions(isCentroided, MzDecimalPlace, IntensityDecimalPlace, ExtractPrecursorByMz, ByPassThermoAlgorithm, 
-                    correctPrecMz, correctPrecZ, predictPrecursors, DDADataChargeStates, Ms2PrecZ, 
+                rc.SetOptions(isCentroided, MzDecimalPlace, IntensityDecimalPlace, ExtractPrecursorByMz, ByPassThermoAlgorithm,
+                    correctPrecMz, correctPrecZ, predictPrecursors, DDADataChargeStates, Ms2PrecZ,
                     showPeakChargeStates, showPeakResolution, exportChargeState);
                 rc.Convert(ExtractProgress);
                 rc.Close();
@@ -382,7 +391,7 @@ namespace RawConverter
             //ExtractProgress.CurrentProgress = 100;
             LogList.Add("  \n");
         }
-        
+
         /// <summary>
         /// Method responsible for setting main parameters
         /// </summary>
