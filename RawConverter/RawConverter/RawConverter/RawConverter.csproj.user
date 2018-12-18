@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PublishUrlHistory>C:\Users\yateslab.PC-YatesLab\Documents\|publish_x64/</PublishUrlHistory>
+    <InstallUrlHistory>http://fields.scripps.edu/rawconv/publish_x64/</InstallUrlHistory>
+    <SupportUrlHistory />
+    <UpdateUrlHistory />
+    <BootstrapperUrlHistory />
+    <ErrorReportUrlHistory />
+    <FallbackCulture>en-US</FallbackCulture>
+    <VerifyUploadedFiles>false</VerifyUploadedFiles>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <StartArguments>C:\Users\yateslab.PC-YatesLab\Desktop\rawfiles\08292016_Okumura_WT_1-01.RAW --mzXML --out_folder C:\Users\yateslab.PC-YatesLab\Desktop\</StartArguments>
+    <StartAction>Project</StartAction>
+    <StartProgram>C:\Users\yateslab.PC-YatesLab\Documents\RawConverter %281%29\RawConverter\RawConverter\bin\x64\Debug\RawConverter.exe</StartProgram>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+    <RemoteDebugEnabled>false</RemoteDebugEnabled>
+    <StartWorkingDirectory>
+    </StartWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+  </PropertyGroup>
+</Project>
