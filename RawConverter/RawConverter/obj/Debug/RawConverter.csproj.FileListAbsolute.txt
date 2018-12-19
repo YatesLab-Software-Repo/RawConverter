@@ -30,3 +30,8 @@ C:\Users\yateslab.PC-YatesLab\Documents\RawConverter (1)\RawConverter\RawConvert
 C:\Users\yateslab.PC-YatesLab\Documents\RawConverter (1)\RawConverter\RawConverter\bin\x86\Debug\Ionic.ZLib.dll
 C:\Users\yateslab.PC-YatesLab\Documents\RawConverter (1)\RawConverter\RawConverter\bin\x86\Debug\MathNet.Numerics.dll
 C:\Users\yateslab.PC-YatesLab\Documents\RawConverter (1)\RawConverter\RawConverter\bin\x86\Debug\MathNet.Numerics.xml
+E:\workspace\github\RawConverter\RawConverter\RawConverter\bin\x86\Debug\RawConverter.exe.config
+E:\workspace\github\RawConverter\RawConverter\RawConverter\obj\Debug\Interop.MSFileReaderLib.dll
+E:\workspace\github\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.csproj.ResolveComReference.cache
+E:\workspace\github\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.exe
+E:\workspace\github\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.pdb
