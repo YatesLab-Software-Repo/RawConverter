@@ -212,7 +212,7 @@ namespace RawConverter.Converter
             this.exportChargeState = exportChargeState;
         }
 
-        public void Convert(TaskProgress progress)
+        public void Convert(TaskProgress progress,int threadCount)
         {
             // temporarily keep the previous MS1 and MS2 spectra for possible speeding up;
             MassSpectrum lastMS1Spec = null;
@@ -415,7 +415,7 @@ namespace RawConverter.Converter
                 }
                 Interlocked.Increment(ref spectrumProcessed);
 
-                progress.CurrentProgress = (int)((double)spectrumProcessed / (LastScanNum - FirstScanNum + 1) * 100);
+                progress.CurrentProgress = (int)((double)spectrumProcessed / (LastScanNum - FirstScanNum + 1) * 100);                
 
                 if (progress.CurrentProgress > lastProgress)
                 {

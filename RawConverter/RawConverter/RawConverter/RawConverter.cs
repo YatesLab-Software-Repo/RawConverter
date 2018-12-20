@@ -288,7 +288,7 @@ namespace RawConverter
             int ijx = 0;
 
             ParallelOptions po = new ParallelOptions();
-            po.MaxDegreeOfParallelism = 3;   
+            po.MaxDegreeOfParallelism = Environment.ProcessorCount;   
             
             //New Task for user Thread count
             List<Task> tasks = new List<Task>();
@@ -317,7 +317,7 @@ namespace RawConverter
                         tasks.AsParallel().AsOrdered();
                     }                    
                     Task.WaitAll(tasks.ToArray());
-
+                    
                     ijx = idx;
                 }
             }
@@ -388,7 +388,7 @@ namespace RawConverter
             //    //    return;
             //    //}
             }
-            
+
             int totalFileNum = inputFiles.Count;
             CurrentFileLabel = "File " + threadCount + " / " + totalFileNum;
 
@@ -399,6 +399,9 @@ namespace RawConverter
 
                 LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
                 LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
+
+                //New Line
+                LogList.Add(" \n");
 
                 MS2Converter mc = new MS2Converter(inFile, OutFileFolder, outFileTypes, correctPrecMz);
                 mc.SetOptions(MzDecimalPlace, IntensityDecimalPlace);
@@ -413,26 +416,35 @@ namespace RawConverter
                 LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
                 LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
 
+                //New Line
+                LogList.Add(" \n");
+
                 MgfConverter mc = new MgfConverter(inFile, OutFileFolder, outFileTypes[0]);
                 mc.SetOptions(MzDecimalPlace, IntensityDecimalPlace, DDADataChargeStates);
                 mc.Convert(ExtractProgress);
                 LogList.Add(" Conversion finished");
             }
             else if (inFile.EndsWith(".raw", true, curCultInfo))
-            { 
+            {   
+                //Console Print
+                //For each File
                 Console.WriteLine(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");                
                 Console.WriteLine(" Parsing RAW file: " + inFile + " . . . ");
-                
+
+                //Loglist Print
+                //For Each file
                 LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
                 LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
 
+                //New Line
+                LogList.Add(" \n");
+
                 ByPassThermoAlgorithm = true;
-                // Covertion
                 RawFileConverter rc = new RawFileConverter(inFile, OutFileFolder, outFileTypes, ExpType, exportChargeState);
                 rc.SetOptions(isCentroided, MzDecimalPlace, IntensityDecimalPlace, ExtractPrecursorByMz, ByPassThermoAlgorithm,
                               correctPrecMz, correctPrecZ, predictPrecursors, DDADataChargeStates, Ms2PrecZ,
                               showPeakChargeStates, showPeakResolution, exportChargeState);
-                rc.Convert(ExtractProgress);
+                rc.Convert(ExtractProgress,threadCount);
                 rc.Close();
             }
             else if (inFile.EndsWith(".mzxml", true, curCultInfo))
@@ -442,6 +454,9 @@ namespace RawConverter
 
                 LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
                 LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
+
+                //New Line
+                LogList.Add(" \n");
 
                 MzXMLConverter mc = new MzXMLConverter(inFile, OutFileFolder, outFileTypes, ExpType);
                 mc.SetOptions(MzDecimalPlace, IntensityDecimalPlace);
@@ -456,12 +471,14 @@ namespace RawConverter
                 LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
                 LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
 
+                //New Line
+                LogList.Add(" \n");
+
                 MzMLConverter mc = new MzMLConverter(inFile, OutFileFolder, outFileTypes);
                 mc.SetOptions(MzDecimalPlace, IntensityDecimalPlace, correctPrecMz);
                 mc.Convert(ExtractProgress);
                 mc.Close();
             }
-            LogList.Add(" \n");
 
             if (threadCount < totalFileNum)
             {
@@ -471,6 +488,7 @@ namespace RawConverter
             {
                 threadCount = totalFileNum;
             }
+
         }
 
         /// <summary>
