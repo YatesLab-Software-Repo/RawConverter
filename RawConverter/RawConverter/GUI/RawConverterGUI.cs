@@ -447,6 +447,22 @@ namespace RawConverter.GUI
                     return;
                 }
 
+                int parsedValue;
+
+                if (trdCnt.Text == "")
+                {
+                    MessageBox.Show("Please Enter Number of Threads to Convert!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                else if (trdCnt.Text != "" && !int.TryParse(trdCnt.Text, out parsedValue))
+                {
+                    MessageBox.Show("Threads count only in Numbers!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                _rawXtract.threadCount = Convert.ToInt32(trdCnt.Text);
+
                 if (!cbMs1.Checked && !cbMs2.Checked && !cbMs3.Checked && !cbMgf.Checked && !cbMzXML.Checked && !cbMzML.Checked && !cbLog.Checked)
                 {
                     MessageBox.Show("Please select an output format!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);

@@ -30,22 +30,26 @@ C:\Users\yateslab.PC-YatesLab\Documents\RawConverter (1)\RawConverter\RawConvert
 C:\Users\yateslab.PC-YatesLab\Documents\RawConverter (1)\RawConverter\RawConverter\bin\x86\Debug\Ionic.ZLib.dll
 C:\Users\yateslab.PC-YatesLab\Documents\RawConverter (1)\RawConverter\RawConverter\bin\x86\Debug\MathNet.Numerics.dll
 C:\Users\yateslab.PC-YatesLab\Documents\RawConverter (1)\RawConverter\RawConverter\bin\x86\Debug\MathNet.Numerics.xml
-D:\ip2workspace\RawConverter\RawConverter\RawConverter\bin\x86\Debug\RawConverter.exe.config
-D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\Interop.MSFileReaderLib.dll
-D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.csproj.ResolveComReference.cache
-D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.exe
-D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.pdb
+E:\workspace\github\RawConverter\RawConverter\RawConverter\bin\x86\Debug\RawConverter.exe.config
+E:\workspace\github\RawConverter\RawConverter\RawConverter\obj\Debug\Interop.MSFileReaderLib.dll
+E:\workspace\github\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.csproj.ResolveComReference.cache
+E:\workspace\github\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.exe
+E:\workspace\github\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.pdb
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\bin\x86\Debug\AveragineTable.txt
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\bin\x86\Debug\lpsolve55.dll
+D:\ip2workspace\RawConverter\RawConverter\RawConverter\bin\x86\Debug\RawConverter.exe.config
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\bin\x86\Debug\RawConverter.exe
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\bin\x86\Debug\RawConverter.pdb
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\bin\x86\Debug\Ionic.ZLib.dll
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\bin\x86\Debug\MathNet.Numerics.dll
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\bin\x86\Debug\MathNet.Numerics.xml
-D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.csprojResolveAssemblyReference.cache
+D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\Interop.MSFileReaderLib.dll
+D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.csproj.ResolveComReference.cache
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.AboutBox.resources
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.GUI.DDAPrecursorCorrectorGUI.resources
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.GUI.DIAPrecursorPredictorGUI.resources
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.GUI.RawConverterGUI.resources
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.Properties.Resources.resources
 D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.csproj.GenerateResource.Cache
+D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.exe
+D:\ip2workspace\RawConverter\RawConverter\RawConverter\obj\Debug\RawConverter.pdb

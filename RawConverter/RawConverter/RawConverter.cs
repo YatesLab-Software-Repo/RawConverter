@@ -36,6 +36,7 @@ namespace RawConverter
         public bool errorFiles { get; set; }
 
         public string OutFileFolder { get; set; }
+        public int threadCount { get; set; }
 
         public ExperimentType ExpType { get; set; }
         private bool isDDA = false;
@@ -132,6 +133,7 @@ namespace RawConverter
                 inputFiles.Add(inFile);
                 RawConverter rawXtract = new RawConverter();
                 rawXtract.inputFiles = inputFiles;
+
 
                 bool hasExpType = false;
 
@@ -277,28 +279,82 @@ namespace RawConverter
             outFileTypeList.CopyTo(outFileTypes);
 
             // Convert Files Parallel.
+            parallel();
 
+        }
+
+        public void parallel()
+        {
+            int ijx = 0;
+
+            ParallelOptions po = new ParallelOptions();
+            po.MaxDegreeOfParallelism = Environment.ProcessorCount;
+
+            //New Task for user Thread count
             List<Task> tasks = new List<Task>();
+
             for (int idx = 0; idx < inputFiles.Count; idx++)
             {
-                var input = inputFiles[idx];
-                var index = idx;
-                Parallel.Invoke(() =>
-                tasks.Add(Task.Factory.StartNew(() => ConvertFile(input, index)).ContinueWith((antecedent) =>
+                if ((idx % threadCount) == 0)
                 {
-                    if (ExtractProgress.CurrentProgress < 100)
+                    for (; ijx < idx; ijx++)
                     {
-                        terminateCode = -2;
-                    }
+                        var input = inputFiles[ijx];
+                        var index = ijx;
 
-                    if (terminateCode > 0)
-                    {
-                        terminateCode = 0;
-                    }
+                        tasks.AsParallel().AsOrdered();
 
-                })));
+                        tasks.Add(Task.Factory.StartNew(() =>
+                        {
+                            Parallel.Invoke(po, () =>
+                            {
+                                tasks.AsParallel().AsOrdered();
+                                ConvertFile(input, index);
+                            });
+
+                        }).ContinueWith((antecedent) => TaskCreationOptions.AttachedToParent, TaskContinuationOptions.ExecuteSynchronously));
+
+                        tasks.AsParallel().AsOrdered();
+                    }
+                    Task.WaitAll(tasks.ToArray());
+
+                    ijx = idx;
+                }
             }
-            Task.WaitAll(tasks.ToArray());
+
+            //Balance files            
+            // New Task for balance files
+
+            List<Task> bal = new List<Task>();
+
+            for (; ijx < inputFiles.Count; ijx++)
+            {
+                var input = inputFiles[ijx];
+                var index = ijx;
+
+                bal.Add(Task.Factory.StartNew(() =>
+                {
+                    bal.AsParallel().AsOrdered();
+
+                    Parallel.Invoke(po, () =>
+                    {
+                        bal.AsParallel().AsOrdered();
+                        ConvertFile(input, index);
+                    });
+
+                }).ContinueWith((antecedent) => TaskCreationOptions.AttachedToParent, TaskContinuationOptions.ExecuteSynchronously));
+            }
+            Task.WaitAll(bal.ToArray());
+
+            if (ExtractProgress.CurrentProgress < 100)
+            {
+                terminateCode = -2;
+            }
+            if (terminateCode > 0)
+            {
+                terminateCode = 0;
+            }
+
         }
 
 
@@ -324,24 +380,29 @@ namespace RawConverter
             // check whether MsFileReaderLib is installed if the input file is a RAW file;
             if (inFile.ToLower().EndsWith(".raw"))
             {
-                //if (!Utils.verifyProgramInstalled())
-                //{
-                //    Console.WriteLine("\nERROR: Not found the necessary program to read RAW files ! Please verify that the program is installed in your computer.\n");
-                //    LogList.Add("ERROR: Not found the necessary program to read Raw files ! Please verify that the program is installed in your computer.\n");
-                //    errorFiles = true;
-                //    return;
-                //}
+                //    //if (!Utils.verifyProgramInstalled())
+                //    //{
+                //    //    Console.WriteLine("\nERROR: Not found the necessary program to read RAW files ! Please verify that the program is installed in your computer.\n");
+                //    //    LogList.Add("ERROR: Not found the necessary program to read Raw files ! Please verify that the program is installed in your computer.\n");
+                //    //    errorFiles = true;
+                //    //    return;
+                //    //}
             }
 
             int totalFileNum = inputFiles.Count;
-            CurrentFileLabel = "File " + (fileIdx + 1) + " / " + totalFileNum;
-            Console.WriteLine(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
-            LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
+            CurrentFileLabel = "File " + threadCount + " / " + totalFileNum;
 
             if (inFile.EndsWith(".ms2", true, curCultInfo) && mgfConverter)
             {
-                Console.WriteLine(" Parsing MS2 file: " + inFile + " . . . ");
-                LogList.Add(" Parsing MS2 file: " + inFile + " . . . ");
+                Console.WriteLine(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
+                Console.WriteLine(" Parsing RAW file: " + inFile + " . . . ");
+
+                LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
+                LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
+
+                //New Line
+                LogList.Add(" \n");
+
                 MS2Converter mc = new MS2Converter(inFile, OutFileFolder, outFileTypes, correctPrecMz);
                 mc.SetOptions(MzDecimalPlace, IntensityDecimalPlace);
                 mc.Convert(ExtractProgress);
@@ -349,8 +410,15 @@ namespace RawConverter
             }
             else if (inFile.EndsWith(".mgf", true, curCultInfo) && ms2Converter)
             {
-                Console.WriteLine(" Parsing MGF file: " + inFile + " . . . ");
-                LogList.Add(" Parsing MGF file: " + inFile + " . . . ");
+                Console.WriteLine(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
+                Console.WriteLine(" Parsing RAW file: " + inFile + " . . . ");
+
+                LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
+                LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
+
+                //New Line
+                LogList.Add(" \n");
+
                 MgfConverter mc = new MgfConverter(inFile, OutFileFolder, outFileTypes[0]);
                 mc.SetOptions(MzDecimalPlace, IntensityDecimalPlace, DDADataChargeStates);
                 mc.Convert(ExtractProgress);
@@ -358,20 +426,36 @@ namespace RawConverter
             }
             else if (inFile.EndsWith(".raw", true, curCultInfo))
             {
+                
+                //Console Print
+                Console.WriteLine(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
                 Console.WriteLine(" Parsing RAW file: " + inFile + " . . . ");
+
+                //Loglist Print
+                LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
                 LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
+
+                //New line
+                LogList.Add(" \n");
+                
                 ByPassThermoAlgorithm = true;
                 RawFileConverter rc = new RawFileConverter(inFile, OutFileFolder, outFileTypes, ExpType, exportChargeState);
                 rc.SetOptions(isCentroided, MzDecimalPlace, IntensityDecimalPlace, ExtractPrecursorByMz, ByPassThermoAlgorithm,
-                    correctPrecMz, correctPrecZ, predictPrecursors, DDADataChargeStates, Ms2PrecZ,
-                    showPeakChargeStates, showPeakResolution, exportChargeState);
+                              correctPrecMz, correctPrecZ, predictPrecursors, DDADataChargeStates, Ms2PrecZ,
+                              showPeakChargeStates, showPeakResolution, exportChargeState);
                 rc.Convert(ExtractProgress);
                 rc.Close();
             }
             else if (inFile.EndsWith(".mzxml", true, curCultInfo))
             {
-                Console.WriteLine(" Parsing mzXML file: " + inFile + " . . . ");
-                LogList.Add(" Parsing mzXML file: " + inFile + " . . . ");
+                Console.WriteLine(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
+                Console.WriteLine(" Parsing RAW file: " + inFile + " . . . ");
+
+                LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
+                LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
+
+                //New Line
+                LogList.Add(" \n");
 
                 MzXMLConverter mc = new MzXMLConverter(inFile, OutFileFolder, outFileTypes, ExpType);
                 mc.SetOptions(MzDecimalPlace, IntensityDecimalPlace);
@@ -380,16 +464,30 @@ namespace RawConverter
             }
             else if (inFile.EndsWith(".mzml", true, curCultInfo))
             {
-                Console.WriteLine(" Parsing mzML file: " + inFile + " . . . ");
-                LogList.Add(" Parsing mzML file: " + inFile + " . . . ");
+                Console.WriteLine(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
+                Console.WriteLine(" Parsing RAW file: " + inFile + " . . . ");
+
+                LogList.Add(" Starting to convert file " + (fileIdx + 1) + " / " + totalFileNum + "...");
+                LogList.Add(" Parsing RAW file: " + inFile + " . . . ");
+
+                //New Line
+                LogList.Add(" \n");
 
                 MzMLConverter mc = new MzMLConverter(inFile, OutFileFolder, outFileTypes);
                 mc.SetOptions(MzDecimalPlace, IntensityDecimalPlace, correctPrecMz);
                 mc.Convert(ExtractProgress);
                 mc.Close();
             }
-            //ExtractProgress.CurrentProgress = 100;
-            LogList.Add("  \n");
+
+            if (threadCount < totalFileNum)
+            {
+                threadCount++;
+            }
+            else
+            {
+                threadCount = totalFileNum;
+            }
+
         }
 
         /// <summary>

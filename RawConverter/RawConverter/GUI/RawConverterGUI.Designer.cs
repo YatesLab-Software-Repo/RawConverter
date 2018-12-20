@@ -74,6 +74,8 @@
             this.gbFiles = new System.Windows.Forms.GroupBox();
             this.btDelFile = new System.Windows.Forms.Button();
             this.gbOptions = new System.Windows.Forms.GroupBox();
+            this.trdCnt = new System.Windows.Forms.TextBox();
+            this.threads = new System.Windows.Forms.Label();
             this.cbCentroid = new System.Windows.Forms.CheckBox();
             this.cbPredDiaPrecs = new System.Windows.Forms.CheckBox();
             this.cbMassCorrection = new System.Windows.Forms.CheckBox();
@@ -467,7 +469,7 @@
             this.gbFiles.Controls.Add(this.lbInputFiles);
             this.gbFiles.Location = new System.Drawing.Point(16, 30);
             this.gbFiles.Name = "gbFiles";
-            this.gbFiles.Size = new System.Drawing.Size(636, 203);
+            this.gbFiles.Size = new System.Drawing.Size(636, 227);
             this.gbFiles.TabIndex = 1;
             this.gbFiles.TabStop = false;
             this.gbFiles.Text = "Files to Convert";
@@ -484,15 +486,34 @@
             // 
             // gbOptions
             // 
+            this.gbOptions.Controls.Add(this.trdCnt);
+            this.gbOptions.Controls.Add(this.threads);
             this.gbOptions.Controls.Add(this.cbCentroid);
             this.gbOptions.Controls.Add(this.cbPredDiaPrecs);
             this.gbOptions.Controls.Add(this.cbMassCorrection);
             this.gbOptions.Location = new System.Drawing.Point(356, 87);
             this.gbOptions.Name = "gbOptions";
-            this.gbOptions.Size = new System.Drawing.Size(274, 105);
+            this.gbOptions.Size = new System.Drawing.Size(274, 129);
             this.gbOptions.TabIndex = 7;
             this.gbOptions.TabStop = false;
             this.gbOptions.Text = "Options";
+            // 
+            // trdCnt
+            // 
+            this.trdCnt.Location = new System.Drawing.Point(120, 98);
+            this.trdCnt.Name = "trdCnt";
+            this.trdCnt.Size = new System.Drawing.Size(148, 20);
+            this.trdCnt.TabIndex = 8;
+            this.trdCnt.Text = "3";
+            // 
+            // threads
+            // 
+            this.threads.AutoSize = true;
+            this.threads.Location = new System.Drawing.Point(12, 101);
+            this.threads.Name = "threads";
+            this.threads.Size = new System.Drawing.Size(106, 13);
+            this.threads.TabIndex = 7;
+            this.threads.Text = "Number Of Threads: ";
             // 
             // cbCentroid
             // 
@@ -575,7 +596,7 @@
             this.lbInputFiles.HorizontalScrollbar = true;
             this.lbInputFiles.Location = new System.Drawing.Point(6, 19);
             this.lbInputFiles.Name = "lbInputFiles";
-            this.lbInputFiles.Size = new System.Drawing.Size(297, 173);
+            this.lbInputFiles.Size = new System.Drawing.Size(297, 199);
             this.lbInputFiles.TabIndex = 0;
             // 
             // fileBrowserDialog
@@ -596,7 +617,7 @@
             this.gbOutput.Controls.Add(this.cbMs1);
             this.gbOutput.Controls.Add(this.labelOutDir);
             this.gbOutput.Controls.Add(this.cbOutFormat);
-            this.gbOutput.Location = new System.Drawing.Point(16, 239);
+            this.gbOutput.Location = new System.Drawing.Point(16, 266);
             this.gbOutput.Name = "gbOutput";
             this.gbOutput.Size = new System.Drawing.Size(636, 132);
             this.gbOutput.TabIndex = 2;
@@ -726,16 +747,16 @@
             // 
             // progBar
             // 
-            this.progBar.Location = new System.Drawing.Point(16, 394);
+            this.progBar.Location = new System.Drawing.Point(16, 426);
             this.progBar.Name = "progBar";
             this.progBar.Size = new System.Drawing.Size(554, 22);
             this.progBar.TabIndex = 3;
             // 
             // btGo
             // 
-            this.btGo.Location = new System.Drawing.Point(576, 377);
+            this.btGo.Location = new System.Drawing.Point(576, 421);
             this.btGo.Name = "btGo";
-            this.btGo.Size = new System.Drawing.Size(75, 39);
+            this.btGo.Size = new System.Drawing.Size(75, 29);
             this.btGo.TabIndex = 4;
             this.btGo.Text = "Go!";
             this.btGo.UseVisualStyleBackColor = true;
@@ -744,9 +765,9 @@
             // gbLog
             // 
             this.gbLog.Controls.Add(this.lbLog);
-            this.gbLog.Location = new System.Drawing.Point(16, 422);
+            this.gbLog.Location = new System.Drawing.Point(16, 459);
             this.gbLog.Name = "gbLog";
-            this.gbLog.Size = new System.Drawing.Size(636, 183);
+            this.gbLog.Size = new System.Drawing.Size(636, 165);
             this.gbLog.TabIndex = 5;
             this.gbLog.TabStop = false;
             this.gbLog.Text = "Log";
@@ -754,15 +775,15 @@
             // lbLog
             // 
             this.lbLog.FormattingEnabled = true;
-            this.lbLog.Location = new System.Drawing.Point(6, 21);
+            this.lbLog.Location = new System.Drawing.Point(6, 20);
             this.lbLog.Name = "lbLog";
-            this.lbLog.Size = new System.Drawing.Size(624, 147);
+            this.lbLog.Size = new System.Drawing.Size(624, 134);
             this.lbLog.TabIndex = 0;
             // 
             // labelFileProcessing
             // 
             this.labelFileProcessing.AutoSize = true;
-            this.labelFileProcessing.Location = new System.Drawing.Point(19, 377);
+            this.labelFileProcessing.Location = new System.Drawing.Point(19, 409);
             this.labelFileProcessing.Name = "labelFileProcessing";
             this.labelFileProcessing.Size = new System.Drawing.Size(52, 13);
             this.labelFileProcessing.TabIndex = 6;
@@ -778,7 +799,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(667, 610);
+            this.ClientSize = new System.Drawing.Size(667, 631);
             this.Controls.Add(this.labelFileProcessing);
             this.Controls.Add(this.gbLog);
             this.Controls.Add(this.btGo);
@@ -881,5 +902,7 @@
         private System.Windows.Forms.CheckBox cbMzML;
         private System.Windows.Forms.ToolStripMenuItem bypassThermoMonoisotopeSelectionAlgorithmToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
+        private System.Windows.Forms.TextBox trdCnt;
+        private System.Windows.Forms.Label threads;
     }
 }

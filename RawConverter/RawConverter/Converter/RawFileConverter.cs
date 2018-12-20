@@ -1,16 +1,16 @@
-﻿using MSFileReaderLib;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading;
+using MSFileReaderLib;
 using RawConverter.Common;
 using RawConverter.DDADataProcess;
 using RawConverter.DIADataProcess;
 using RawConverter.MassSpec;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
+using System.ComponentModel;
 namespace RawConverter.Converter
 {
     class RawFileConverter
@@ -74,13 +74,12 @@ namespace RawConverter.Converter
 
         private double DEFAULT_DIA_ISO_WIN_SIZE = 10;
 
-        private HashSet<String> scanSet = new HashSet<String>();
         //Collection 
         private Dictionary<int, int> chargeNum = new Dictionary<int, int>();
 
         public RawFileConverter(string rawFile, string outFolder, string[] outFileTypes, ExperimentType expType, bool exportChargeState)
         {
-           
+
             _rawReader = (IXRawfile5)new MSFileReader_XRawfile();
             Console.WriteLine("_rawReader created successfully.");
             int pnMajorVersion = -1, pnMinorVersion = -1, pnSubMinorVersion = -1, nBuilderNumber = -1;
@@ -140,7 +139,7 @@ namespace RawConverter.Converter
             foreach (string outFileType in outFileTypes)
             {
                 outFileWithoutExtentionName = outFolder + Path.DirectorySeparatorChar +
-                    Regex.Replace(inFileName, ".raw", ".", RegexOptions.IgnoreCase);
+                Regex.Replace(inFileName, ".raw", ".", RegexOptions.IgnoreCase);
                 Console.WriteLine(" Output file: " + outFileWithoutExtentionName + outFileType);
                 if (outFileType.Equals("mgf", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -191,8 +190,8 @@ namespace RawConverter.Converter
                 msModel, "nanoelectrospray", msModel, msModel, "acquisition", "Xcalibur", softwareVersion, rawConverterVersion);
         }
 
-        public void SetOptions(bool isCentroided, int mzDecimalPlace, int intensityDecimalPlace, bool extractPrecByMz, 
-            bool bypassThermoAlgorithm, bool correctPrecMz, bool correctPrecZ, bool predictPrecursors, HashSet<int> DDADataChargeStates, 
+        public void SetOptions(bool isCentroided, int mzDecimalPlace, int intensityDecimalPlace, bool extractPrecByMz,
+            bool bypassThermoAlgorithm, bool correctPrecMz, bool correctPrecZ, bool predictPrecursors, HashSet<int> DDADataChargeStates,
             int[] ms2PrecZ, bool showPeakChargeState, bool showPeakResolution, bool exportChargeState)
         {
             this.isCentroided = isCentroided;
@@ -255,7 +254,7 @@ namespace RawConverter.Converter
             for (int scanNum = FirstScanNum; scanNum <= LastScanNum; scanNum++)
             {
                 MassSpectrum spec = GetSpectrumByScanNum(scanNum);
-               // Console.Write("^^^^^" + spec.Peaks.Count);
+                // Console.Write("^^^^^" + spec.Peaks.Count);
                 if (spec == null)
                 {
                     continue;
@@ -297,7 +296,7 @@ namespace RawConverter.Converter
                         {
                             if (spec.PrecursorScanNumber == lastMS1ScanNum)
                             {
-                              
+
                                 // double check the precursor m/z value in the MS1 scan;
                                 ExtractPrecursorMz(spec, lastMS1Spec);
                                 if (correctPrecMz)
@@ -414,8 +413,10 @@ namespace RawConverter.Converter
                 {
                     break;
                 }
-                spectrumProcessed++;
+                Interlocked.Increment(ref spectrumProcessed);
+
                 progress.CurrentProgress = (int)((double)spectrumProcessed / (LastScanNum - FirstScanNum + 1) * 100);
+
                 if (progress.CurrentProgress > lastProgress)
                 {
                     try
@@ -443,7 +444,6 @@ namespace RawConverter.Converter
                 //export charge states to file           
                 ExportChargeStatesToFile(chargeNum);
             }
-
 
             // complete mzXML file writing if mzXMLWriter is available;
             if (_mzXMLWriter != null)
@@ -488,14 +488,14 @@ namespace RawConverter.Converter
             {
                 if (_isFirstMS2Scan)
                 {
-                    
+
                     TextFileWriter.WriteMSnHeader(_ms2Writer, "MS2", LastScanNum, spec);
                     _isFirstMS2Scan = false;
                 }
                 //TextFileWriter.WriteToMSn(_ms2Writer, spec, mzDecimalPlace, intensityDecimalPlace, showPeakChargeState, showPeakResolution,_verifyWriter);
                 if (expType == ExperimentType.DIA && predictPrecursors)
                 {
-                    TextFileWriter.WriteToMSnDIA(_ms2Writer, spec, mzDecimalPlace, intensityDecimalPlace, showPeakChargeState, showPeakResolution);
+                    TextFileWriter.WriteToMSnWithDuplicates(_ms2Writer, spec, mzDecimalPlace, intensityDecimalPlace, showPeakChargeState, showPeakResolution);
                 }
                 else
                 {
@@ -677,10 +677,10 @@ namespace RawConverter.Converter
                 //Console.Write(precMz);               
                 if (precMz == 0 || bypassThermoAlgorithm)
                 {
-                 
+
                     precMz = spectrum.PrecMzFromFilter;
                 }
-               
+
                 if (precZ == 0 && ALWAYS_USE_PRECURSOR_CHARGE_STATE_RANGE)
                 {
                     foreach (int z in MS2_PRECURSOR_CHARGES)
@@ -795,10 +795,10 @@ namespace RawConverter.Converter
             int precZ = spec.Precursors[0].Item2;
             Ion qPeak = new Ion(precMz, 0, precZ);
             IonMzComparer imc = new IonMzComparer();
-            
-            
+
+
             int pos = peakMzList.BinarySearch(qPeak, imc);
-            
+
             if (pos < 0)
             {
                 pos = -pos - 1;
@@ -839,7 +839,7 @@ namespace RawConverter.Converter
             {
                 return;
             }
-            
+
             // search for the peak with closest m/z and the peak with the highest intensity;
             double mzDist = double.MaxValue;
             int closestIdx = 0;
@@ -858,10 +858,10 @@ namespace RawConverter.Converter
                     maxHIdx = i;
                 }
             }
-            
+
 
             // determine the precursor m/z value;
-            
+
             if (extractPrecByMz)
             {
                 List<Tuple<double, int>> newPrecList = new List<Tuple<double, int>>();
@@ -880,7 +880,7 @@ namespace RawConverter.Converter
                     newPrecList.Add(new Tuple<double, int>(peaksInWindow[maxHIdx].MZ, spec.Precursors[i].Item2));
                 }
                 spec.Precursors = newPrecList;
-               
+
                 spec.PrecursorIntensity = peaksInWindow[maxHIdx].Intensity;
             }
 
@@ -957,7 +957,7 @@ namespace RawConverter.Converter
         private double[,] GetFragmentationData(IXRawfile2 raw, int scanNumber, string scanFilter)
         {
             double[,] data;
-            
+
             if (scanFilter.ToLower().Contains("ftms") && isCentroided)
             {
                 //get the FT-PROFILE labels as the centroided peaks;
@@ -1112,7 +1112,6 @@ namespace RawConverter.Converter
             //    MassSpectrum MS1spec = GetSpectrumByScanNum(MS1ScanNum[CurrentIndexInMS1 + 2]);
             //    currentMS1.Add(MS1spec);
             //}
-
 
             PrecursorCorrector pc = new PrecursorCorrector();
 
