@@ -740,6 +740,7 @@ namespace RawConverter.Converter
 
                 if (precZ == 0 && ALWAYS_USE_PRECURSOR_CHARGE_STATE_RANGE)
                 {
+                    /*
                     int maxCharge = 0;
                     foreach (int z in MS2_PRECURSOR_CHARGES)
                     {
@@ -748,7 +749,12 @@ namespace RawConverter.Converter
                             maxCharge = z;
                         }
                     }
-                    for (int z = 0; z <= maxCharge; z++)
+                    for (int z = 1; z <= maxCharge; z++)
+                    {
+                        spectrum.Precursors.Add(new Tuple<double, int>(precMz, z));
+                    }
+                    */
+                    foreach (int z in MS2_PRECURSOR_CHARGES)
                     {
                         spectrum.Precursors.Add(new Tuple<double, int>(precMz, z));
                     }
