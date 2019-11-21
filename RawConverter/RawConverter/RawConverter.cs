@@ -36,7 +36,7 @@ namespace RawConverter
         public bool errorFiles { get; set; }
 
         public string OutFileFolder { get; set; }
-        public int threadCount { get; set; }
+        public int threadCount { get; set; } = 1;
 
         public ExperimentType ExpType { get; set; }
         private bool isDDA = false;
