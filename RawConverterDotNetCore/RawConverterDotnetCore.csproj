@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MarkerMetro.Unity.Ionic.Zlib" Version="2.0.0.14" />
+    <PackageReference Include="MathNet.Numerics" Version="4.9.0" />
+    <PackageReference Include="MathNet.Numerics.MKL.Linux-x64" Version="2.0.0" />
+    <PackageReference Include="ThermoFisher.CommonCore.BackgroundSubtraction" Version="5.0.0.7" />
+    <PackageReference Include="ThermoFisher.CommonCore.Data" Version="5.0.0.7" />
+    <PackageReference Include="ThermoFisher.CommonCore.MassPrecisionEstimator" Version="5.0.0.7" />
+    <PackageReference Include="ThermoFisher.CommonCore.RawFileReader" Version="5.0.0.7" />
+    <PackageReference Include="OpenMcdf" Version="2.2.1.4" />
+    <PackageReference Include="LpSolveDotNet" Version="3.1.0" />
+  </ItemGroup>
+</Project>
