@@ -1016,7 +1016,7 @@ namespace RawConverter.Converter
                 //object flagsObj = null;
                // raw.GetLabelData(ref labelsObj, ref flagsObj, ref scanNumber);
                // data = (double[,])labelsObj;
-                CentroidStream centroid =  raw.GetCentroidStream(scanNumber, true);
+                CentroidStream centroid =  raw.GetCentroidStream(scanNumber, false);
                 data = new double[6, centroid.GetLabelPeaks().Length];
                 for(int i=0; i<centroid.GetLabelPeaks().Length; i++)
                 {
