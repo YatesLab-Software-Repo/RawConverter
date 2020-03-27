@@ -13,6 +13,9 @@
     <PackageReference Include="ThermoFisher.CommonCore.MassPrecisionEstimator" Version="5.0.0.7" />
     <PackageReference Include="ThermoFisher.CommonCore.RawFileReader" Version="5.0.0.7" />
     <PackageReference Include="OpenMcdf" Version="2.2.1.4" />
-    <PackageReference Include="LpSolveDotNet" Version="3.1.0" />
+    <Content  Include="Common/liblpsolve55.so" CopyToOutputDirectory="Always" />
+    <Content  Include="Common/liblpsolve55.so" CopyToPublishDirectory="Always" />
+    <Content  Include="AveragineTable.txt" CopyToOutputDirectory="Always" />
+    <Content  Include="AveragineTable.txt" CopyToPublishDirectory="Always" />
   </ItemGroup>
 </Project>
