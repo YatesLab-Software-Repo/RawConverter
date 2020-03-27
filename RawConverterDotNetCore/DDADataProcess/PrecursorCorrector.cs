@@ -31,9 +31,12 @@ namespace RawConverter.DDADataProcess
             int len = MAX_MASS_IN_AVERAGINE_TABLE / 50 + 1;
             IsotopeNumArr = new int[len];
             AveragineTable = new double[len, MAX_ISOTOPE_NUM];
+            string tableDir = AppDomain.CurrentDomain.BaseDirectory;
+            string tablePath = Path.Combine(tableDir,"AveragineTable.txt"); 
+            //Console.WriteLine("path "+tablePath); 
             try
             {
-                using (StreamReader sr = new StreamReader("AveragineTable.txt"))
+                using (StreamReader sr = new StreamReader(tablePath))
                 {
                     while (sr.Peek() >= 0)
                     {
