@@ -92,9 +92,9 @@ namespace RawConverter.Converter
             Console.WriteLine("nBuilderNumber = " + nBuilderNumber);
 */
            // _rawReader.Open(rawFile);
-            _rawReader = RawFileReaderAdapter.FileFactory(rawFile);
-
-
+           
+            _rawReader = RawFileReaderFactory.ReadFile(rawFile);
+            _rawReader.IncludeReferenceAndExceptionData = false; 
             Console.WriteLine("_rawReader open file successfully.");
             _rawReader.SelectInstrument(0, 1);
 
@@ -114,8 +114,7 @@ namespace RawConverter.Converter
         public void Close()
         {
             //_rawReader.Close();
-            
-
+            _rawReader.Dispose();            
             if (_mgfWriter != null)
             {
                 _mgfWriter.Close();
@@ -1017,16 +1016,16 @@ namespace RawConverter.Converter
                // raw.GetLabelData(ref labelsObj, ref flagsObj, ref scanNumber);
                // data = (double[,])labelsObj;
                 CentroidStream centroid =  raw.GetCentroidStream(scanNumber, false);
-                data = new double[6, centroid.GetLabelPeaks().Length];
-                for(int i=0; i<centroid.GetLabelPeaks().Length; i++)
+                data = new double[6, centroid.Length];
+                for(int i=0; i<centroid.Length; i++)
                 {
-                    
-                    data[(int)RawLabelDataColumn.MZ,i] = centroid.GetLabelPeak(i).Mass;
-                    data[(int)RawLabelDataColumn.Intensity,i] = centroid.GetLabelPeak(i).Intensity;
-                    data[(int)RawLabelDataColumn.Charge,i] = centroid.GetLabelPeak(i).Charge;
-                    data[(int)RawLabelDataColumn.Resolution,i] = centroid.GetLabelPeak(i).Resolution;
-                    data[(int)RawLabelDataColumn.NoiseBaseline,i] = centroid.GetLabelPeak(i).Baseline;
-                    data[(int)RawLabelDataColumn.NoiseLevel,i] = centroid.GetLabelPeak(i).Noise; 
+                    LabelPeak peak = centroid.GetLabelPeak(i);
+                    data[(int)RawLabelDataColumn.MZ,i] = peak.Mass;
+                    data[(int)RawLabelDataColumn.Intensity,i] = peak.Intensity;
+                    data[(int)RawLabelDataColumn.Charge,i] = peak.Charge;
+                    data[(int)RawLabelDataColumn.Resolution,i] = peak.Resolution;
+                    data[(int)RawLabelDataColumn.NoiseBaseline,i] = peak.Baseline;
+                    data[(int)RawLabelDataColumn.NoiseLevel,i] = peak.Noise; 
                 }
             }
             else
