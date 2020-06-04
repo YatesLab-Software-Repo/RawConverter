@@ -94,7 +94,7 @@ namespace RawConverter.Converter
            // _rawReader.Open(rawFile);
            
             _rawReader = RawFileReaderFactory.ReadFile(rawFile);
-            _rawReader.IncludeReferenceAndExceptionData = false; 
+            _rawReader.IncludeReferenceAndExceptionData = true; 
             Console.WriteLine("_rawReader open file successfully.");
             _rawReader.SelectInstrument(0, 1);
 
@@ -599,12 +599,11 @@ namespace RawConverter.Converter
             retentionTime =  _rawReader.RetentionTimeFromScanNumber(scanNum);
             // get the ion injection time and the precursor information;
             LogEntry trailerLabelsObj = null;
-            object[] trailerValuesObj = null;
+            string[] trailerValuesObj = null;
            // int trailer_array_size = -1;
             //_rawReader.GetTrailerExtraForScanNum(scanNum, ref trailerLabelsObj, ref trailerValuesObj, ref trailer_array_size);
             trailerLabelsObj = _rawReader.GetTrailerExtraInformation(scanNum);
-            trailerValuesObj = _rawReader.GetTrailerExtraValues(scanNum);
-        
+            trailerValuesObj = _rawReader.GetTrailerExtraValues(scanNum, true);
 
             string[] trailerLabels = trailerLabelsObj.Labels;
             object[] trailerValues = trailerValuesObj;
@@ -616,26 +615,30 @@ namespace RawConverter.Converter
             double isolationWindowSize = 0;
             for (int trailerIdx = trailerLabels.GetLowerBound(0); trailerIdx <= trailerLabels.GetUpperBound(0); trailerIdx++)
             {
-                if (trailerLabels[trailerIdx].StartsWith("Ion Injection Time"))
+                if(trailerValues[trailerIdx].ToString().Trim().Length >0)
                 {
-                    ionInjectionTime = System.Convert.ToDouble((trailerValues[trailerIdx]));
+                    if (trailerLabels[trailerIdx].StartsWith("Ion Injection Time"))
+                    {
+                        ionInjectionTime = System.Convert.ToDouble((trailerValues[trailerIdx]));
+                    }
+                    if (trailerLabels[trailerIdx].StartsWith("Monoisotopic M/Z"))
+                    {
+                        precMz = System.Convert.ToDouble(trailerValues[trailerIdx]);
+                    }
+                    if (trailerLabels[trailerIdx].StartsWith("Charge State"))
+                    {
+                            precZ = System.Convert.ToInt32(trailerValues[trailerIdx]);
+                    }
+                    if (trailerLabels[trailerIdx].StartsWith("Master Scan Number"))
+                    {
+                        precScanNum = System.Convert.ToInt32(trailerValues[trailerIdx]);
+                    }
+                    if (trailerLabels[trailerIdx].StartsWith("MS2 Isolation Width"))
+                    {
+                        isolationWindowSize = System.Convert.ToDouble((trailerValues[trailerIdx]));
+                    }
                 }
-                if (trailerLabels[trailerIdx].StartsWith("Monoisotopic M/Z"))
-                {
-                    precMz = System.Convert.ToDouble(trailerValues[trailerIdx]);
-                }
-                if (trailerLabels[trailerIdx].StartsWith("Charge State"))
-                {
-                    precZ = System.Convert.ToInt32(trailerValues[trailerIdx]);
-                }
-                if (trailerLabels[trailerIdx].StartsWith("Master Scan Number"))
-                {
-                    precScanNum = System.Convert.ToInt32(trailerValues[trailerIdx]);
-                }
-                if (trailerLabels[trailerIdx].StartsWith("MS2 Isolation Width"))
-                {
-                    isolationWindowSize = System.Convert.ToDouble((trailerValues[trailerIdx]));
-                }
+
             }
 
             // get the analyzer temperature from the status log;
