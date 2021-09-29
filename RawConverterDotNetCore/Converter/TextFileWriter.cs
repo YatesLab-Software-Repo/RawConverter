@@ -61,6 +61,8 @@ namespace RawConverter.Converter
                 {
                     writer.Write(" " + Math.Round(peak.Resolution, 2));
                 }
+                writer.Write(" "+Math.Round(peak.Noise,2) +" "+Math.Round(peak.NoiseBaseline,2));
+
                 writer.Write("\n");
             }
             writer.Flush();
@@ -126,6 +128,8 @@ namespace RawConverter.Converter
                 {
                     writer.Write(" " + Math.Round(peak.Resolution, 2));
                 }
+                writer.Write(" "+Math.Round(peak.Noise,2) +" "+Math.Round(peak.NoiseBaseline,2));
+
                 writer.Write("\n");
             }
 

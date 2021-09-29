@@ -94,10 +94,10 @@ namespace RawConverter.Converter
            // _rawReader.Open(rawFile);
            
             _rawReader = RawFileReaderFactory.ReadFile(rawFile);
-            _rawReader.IncludeReferenceAndExceptionData = true; 
+            _rawReader.IncludeReferenceAndExceptionData = false; 
             Console.WriteLine("_rawReader open file successfully.");
-            _rawReader.SelectInstrument(0, 1);
-
+            _rawReader.SelectInstrument(Device.MS, 1);
+            
             rawFileName = rawFile;
             IRunHeader header = _rawReader.RunHeaderEx; 
 
@@ -978,7 +978,9 @@ namespace RawConverter.Converter
                 peaks.Add(new Ion(labelData[(int)RawLabelDataColumn.MZ, peakIndex],
                     labelData[(int)RawLabelDataColumn.Intensity, peakIndex],
                     (int)RawLabelDataColumn.Charge < labelData.GetLength(0) ? (int)labelData[(int)RawLabelDataColumn.Charge, peakIndex] : 0,
-                    (int)RawLabelDataColumn.Resolution < labelData.GetLength(0) ? (int)labelData[(int)RawLabelDataColumn.Resolution, peakIndex] : 0));
+                    (int)RawLabelDataColumn.Resolution < labelData.GetLength(0) ? (int)labelData[(int)RawLabelDataColumn.Resolution, peakIndex] : 0,
+                    (int)RawLabelDataColumn.NoiseBaseline < labelData.GetLength(0) ? labelData[(int)RawLabelDataColumn.NoiseBaseline, peakIndex] : -1,
+                    (int)RawLabelDataColumn.NoiseLevel < labelData.GetLength(0) ? labelData[(int)RawLabelDataColumn.NoiseLevel, peakIndex] : -1));
             }
 
             // sort the peaks;
@@ -1029,6 +1031,7 @@ namespace RawConverter.Converter
                     data[(int)RawLabelDataColumn.Resolution,i] = peak.Resolution;
                     data[(int)RawLabelDataColumn.NoiseBaseline,i] = peak.Baseline;
                     data[(int)RawLabelDataColumn.NoiseLevel,i] = peak.Noise; 
+                    
                 }
             }
             else
