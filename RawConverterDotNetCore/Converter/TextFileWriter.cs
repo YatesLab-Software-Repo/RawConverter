@@ -16,8 +16,7 @@ namespace RawConverter.Converter
 
         public static void WriteMSnHeader(StreamWriter writer, String msType, int scanCount, MassSpectrum spec)
         {
-            // MSn header format;
-            
+            // MSn header format
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             string msnHeader = "H\tCreation Date\t" + DateTime.Now.ToString() + "\n"
                 + "H\tExtractor\tRawConverter\n"
@@ -120,11 +119,11 @@ namespace RawConverter.Converter
             {
                 writer.Write(Math.Round(peak.MZ, mzDecimalPlace) + " "
                     + Math.Round(peak.Intensity, intensityDecimalPlace));
-                if (showPeakChargeState && spec.ActivationMethod == Activation.HCD)
+                if (showPeakChargeState )
                 {
                     writer.Write(" " + peak.Charge);
                 }
-                if (showPeakResolution && spec.ActivationMethod == Activation.HCD)
+                if (showPeakResolution )
                 {
                     writer.Write(" " + Math.Round(peak.Resolution, 2));
                 }
