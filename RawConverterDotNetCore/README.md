@@ -13,8 +13,9 @@ sudo rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-
 sudo yum install dotnet-sdk-3.1
 ```
 
+
 ## Run
 ```
-RawConverterDotnetCore test_raw/FLI_180508_JMK_Biognosys_new_prep_Brain_TMT10_10fr_HpH_fr10.raw --ms1 --ms2 --ms3
+binb/debug/RawConverterDotnetCore test_raw/FLI_180508_JMK_Biognosys_new_prep_Brain_TMT10_10fr_HpH_fr10.raw --ms1 --ms2 --ms3
 
 ```

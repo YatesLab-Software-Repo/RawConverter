@@ -1,3 +1,5 @@
 /test_data/
 /bin/
 /obj/
+/out/
+.zip

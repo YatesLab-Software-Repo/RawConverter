@@ -25,6 +25,9 @@ namespace RawConverter.MassSpec
         public double Resolution { get; set; }
         public double Mass { get; private set; }
 
+        public double NoiseBaseline {get; private set; }
+        
+        public double Noise {get; private set; }
         /// <summary>
         /// Constructor
         /// </summary>
@@ -50,6 +53,17 @@ namespace RawConverter.MassSpec
             Intensity = intensity;
             Charge = charge;
             Resolution = resolution;
+            CalculateMass();
+        }
+
+        public Ion(double mz, double intensity, int charge, double resolution, double noisebaseline, double noise)
+        {
+            MZ = mz;
+            Intensity = intensity;
+            Charge = charge;
+            Resolution = resolution;
+            NoiseBaseline = noisebaseline;
+            Noise = noise; 
             CalculateMass();
         }
 
