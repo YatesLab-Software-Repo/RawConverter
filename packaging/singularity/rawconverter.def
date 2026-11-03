@@ -1,0 +1,32 @@
+# RawConverter for hosts whose glibc/libstdc++ are too old for .NET 10 (e.g. CentOS 7).
+# Build from the repository root after publishing:
+#   ./build.sh    (or: dotnet publish src/RawConverter.Cli and src/RawConverter.Gui -r linux-x64 --self-contained
+#                  -o out/RawConverter-linux-x64)
+#   singularity build --fakeroot out/rawconverter.sif packaging/singularity/rawconverter.def
+# Run:
+#   singularity run -B /data out/rawconverter.sif sample.raw --ms1 --ms2
+BootStrap: docker
+From: ubuntu:24.04
+
+%files
+    out/RawConverter-linux-x64 /opt/rawconverter
+
+%post
+    apt-get -y update
+    # libicu: culture data for .NET; libgomp1: OpenMP runtime for Bruker's libtimsdata;
+    # fontconfig and X11 libraries: the GUI (singularity exec rawconverter.sif /opt/rawconverter/RawConverterGUI)
+    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends libicu74 libgomp1 ca-certificates \
+        libfontconfig1 libice6 libsm6 libx11-6 libxrandr2 libxi6 libxcursor1
+    rm -rf /var/lib/apt/lists/*
+    chmod -R a+rX /opt/rawconverter
+
+%environment
+    export DOTNET_CLI_TELEMETRY_OPTOUT=1
+    # .NET writes nothing it needs to keep, so let it run from a read-only image
+    export DOTNET_BUNDLE_EXTRACT_BASE_DIR=/tmp
+
+%runscript
+    exec /opt/rawconverter/RawConverter "$@"
+
+%labels
+    Author Yates Lab

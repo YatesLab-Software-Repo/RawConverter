@@ -283,21 +283,23 @@ namespace RawConverter.Converter
                                 uncompressedIntensity = data.binary;
                             }
                         }
-                    }
+                        if(uncompressedMz != null && uncompressedIntensity != null)
+                        {
+                            for (int byteIdx = 0; byteIdx < uncompressedMz.Length; byteIdx += shiftByte)
+                            {
+                                byte[] mzBytes = new byte[8];
+                                Buffer.BlockCopy(uncompressedMz, byteIdx, mzBytes, 0, shiftByte);
 
-                    for (int byteIdx = 0; byteIdx < uncompressedMz.Length; byteIdx += shiftByte)
-                    {
-                        byte[] mzBytes = new byte[8];
-                        Buffer.BlockCopy(uncompressedMz, byteIdx, mzBytes, 0, shiftByte);
+                                // retrieve the mz and intensity;
+                                double mz = BitConverter.ToDouble(mzBytes, 0);
 
-                        // retrieve the mz and intensity;
-                        double mz = BitConverter.ToDouble(mzBytes, 0);
+                                byte[] intBytes = new byte[8];
+                                Buffer.BlockCopy(uncompressedIntensity, byteIdx, intBytes, 0, shiftByte);
+                                double intensity = BitConverter.ToDouble(intBytes, 0);
 
-                        byte[] intBytes = new byte[8];
-                        Buffer.BlockCopy(uncompressedIntensity, byteIdx, intBytes, 0, shiftByte);
-                        double intensity = BitConverter.ToDouble(intBytes, 0);
-
-                        spec.Peaks.Add(new Ion(mz, intensity));
+                                spec.Peaks.Add(new Ion(mz, intensity));
+                            }
+                        }
                     }
 
                     
@@ -359,7 +361,10 @@ namespace RawConverter.Converter
                     }
                     else
                     {
-                        WriteToOutFiles(spec, isFirstScan);
+                        if(spec.Peaks.Count > 0)
+                        {
+                            WriteToOutFiles(spec, isFirstScan);
+                        }
                     }
 
                     isFirstScan = false;

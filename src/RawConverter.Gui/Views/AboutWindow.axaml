@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RawConverter.Gui.Views.AboutWindow"
+        Title="About RawConverter"
+        Width="435" Height="283" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <!-- Layout of the WinForms AboutBox. -->
+  <Canvas>
+    <Image Canvas.Left="12" Canvas.Top="12" Width="268" Height="259" Source="avares://RawConverterGUI/Assets/logo.jpg"
+           Stretch="Uniform" />
+    <TextBlock Canvas.Left="289" Canvas.Top="12" Text="RawConverter" />
+    <TextBlock Name="VersionText" Canvas.Left="289" Canvas.Top="38" />
+    <TextBlock Canvas.Left="289" Canvas.Top="64" Text="Copyright © 2014" />
+    <TextBlock Canvas.Left="289" Canvas.Top="90" Text="The Scripps Research Institute" TextWrapping="Wrap" Width="140" />
+    <TextBlock Name="BrukerText" Canvas.Left="289" Canvas.Top="136" TextWrapping="Wrap" Width="140" />
+    <Button Canvas.Left="348" Canvas.Top="248" Width="75" Height="23" Content="OK" IsDefault="True" IsCancel="True"
+            Click="OnOk" />
+  </Canvas>
+</Window>

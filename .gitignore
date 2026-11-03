@@ -1,0 +1,8 @@
+bin/
+obj/
+out/
+/test_data/
+/artifacts/
+*.zip
+*.user
+.vs/

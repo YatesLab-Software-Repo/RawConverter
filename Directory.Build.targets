@@ -1,0 +1,12 @@
+<Project>
+  <!-- Thermo's RawFileReaderFactory loads ThermoFisher.CommonCore.RawFileReader.dll from the application
+       folder by path, so with PublishSingleFile the Thermo assemblies (and OpenMcdf, which the reader
+       loads) must stay as separate files next to the executable. -->
+  <Target Name="KeepThermoAssembliesOutOfSingleFile" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Update="@(ResolvedFileToPublish)"
+                             Condition="$([System.String]::Copy('%(Filename)').StartsWith('ThermoFisher.')) Or $([System.String]::Copy('%(Filename)').StartsWith('OpenMcdf'))"
+                             ExcludeFromSingleFile="true" />
+    </ItemGroup>
+  </Target>
+</Project>

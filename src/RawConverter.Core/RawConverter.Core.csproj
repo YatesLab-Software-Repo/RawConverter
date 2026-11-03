@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>RawConverter</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageReference Include="ThermoFisher.CommonCore.Data" Version="5.0.0.7" />
+    <PackageReference Include="ThermoFisher.CommonCore.RawFileReader" Version="5.0.0.7" />
+    <!-- Loaded by RawFileReader at runtime but not declared in its package. It needs the 2.x API;
+         the NU1902 advisories (infinite loop on a crafted file) are only fixed in 3.x. -->
+    <PackageReference Include="OpenMcdf" Version="2.4.1" NoWarn="NU1902" />
+    <PackageReference Include="OpenMcdf.Extensions" Version="2.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="RawConverter.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Copied next to the app so DllImport("lpsolve55") resolves on both Windows and Linux. -->
+    <None Include="native/lpsolve55.dll" Link="lpsolve55.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="native/liblpsolve55.so" Link="liblpsolve55.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Bruker TDF SDK, loaded by DllImport("timsdata") for timsTOF input. -->
+    <None Include="native/timsdata.dll" Link="timsdata.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="native/libtimsdata.so" Link="libtimsdata.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Bruker's redist.txt requires this file to accompany the libraries. -->
+    <None Include="../../Licenses/Bruker/THIRD-PARTY-LICENSE-README.txt" Link="Licenses/Bruker/THIRD-PARTY-LICENSE-README.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="AveragineTable.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

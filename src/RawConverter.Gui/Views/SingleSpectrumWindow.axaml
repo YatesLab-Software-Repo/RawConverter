@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RawConverter.Gui.Views.SingleSpectrumWindow"
+        Width="922" Height="588" CanResize="False">
+  <!-- Layout of the WinForms DDA/DIA single spectrum windows. -->
+  <Canvas>
+    <HeaderedContentControl Classes="groupbox" Header="Exported Spectrum From Xcalibur"
+                            Canvas.Left="12" Canvas.Top="12" Width="418" Height="568">
+      <Canvas>
+        <TextBox Name="SpectrumText" Canvas.Left="6" Canvas.Top="19" Width="406" Height="537"
+                 AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap" VerticalContentAlignment="Top" />
+      </Canvas>
+    </HeaderedContentControl>
+    <Button Canvas.Left="436" Canvas.Top="233" Width="51" Height="61" Content="Predict" Click="OnPredict" />
+    <HeaderedContentControl Classes="groupbox" Header="Predicted precursor m/z and charge list"
+                            Canvas.Left="493" Canvas.Top="12" Width="418" Height="568">
+      <Canvas>
+        <ListBox Name="OutputList" Canvas.Left="6" Canvas.Top="19" Width="406" Height="537" />
+      </Canvas>
+    </HeaderedContentControl>
+  </Canvas>
+</Window>

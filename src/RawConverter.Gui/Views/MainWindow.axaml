@@ -1,0 +1,115 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RawConverter.Gui.ViewModels"
+        x:Class="RawConverter.Gui.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="RawConverter"
+        Width="667" Height="631" CanResize="False"
+        WindowStartupLocation="CenterScreen">
+  <!-- Positions and sizes are those of the WinForms RawConverterGUI. -->
+  <Canvas>
+    <Menu Canvas.Left="0" Canvas.Top="0" Width="667" Height="24">
+      <MenuItem Header="File">
+        <MenuItem Header="Exit" Click="OnExit" />
+      </MenuItem>
+      <MenuItem Header="Options" IsEnabled="{Binding IsIdle}">
+        <MenuItem Name="MzDecimalMenu" Header="M/Z Decimal Places" />
+        <MenuItem Name="IntensityDecimalMenu" Header="Intensity Decimal Places" />
+        <Separator />
+        <MenuItem Header="DDA">
+          <MenuItem Name="ChargeStateMenu" Header="Charge States" />
+          <MenuItem Header="Single Spectrum Analysis" Click="OnDdaSingleSpectrum" />
+        </MenuItem>
+        <MenuItem Header="DIA">
+          <MenuItem Header="Single Spectrum Analysis" Click="OnDiaSingleSpectrum" />
+        </MenuItem>
+        <Separator />
+        <MenuItem Name="ExtractPrecursorByMzMenu" Header="Extract Precursor By M/Z" ToggleType="CheckBox" />
+        <Separator />
+        <MenuItem Header="MSn Options">
+          <MenuItem Name="ShowPeakChargeStatesMenu" Header="Show Peak Charge States" ToggleType="CheckBox" />
+          <MenuItem Name="ShowPeakResolutionMenu" Header="Show Peak Resolution" ToggleType="CheckBox" />
+          <MenuItem Name="ExportChargeStateMenu" Header="Export Charge State Statistics" ToggleType="CheckBox" />
+          <MenuItem Name="BypassThermoMenu" Header="Bypass Thermo Monoisotope Selection Algorithm" ToggleType="CheckBox" />
+        </MenuItem>
+      </MenuItem>
+      <MenuItem Header="About" Click="OnAbout" />
+    </Menu>
+
+    <!-- Everything but Stop! and the log is disabled while converting. -->
+    <HeaderedContentControl Classes="groupbox" Header="Files to Convert" IsEnabled="{Binding IsIdle}"
+                            Canvas.Left="16" Canvas.Top="30" Width="636" Height="227">
+      <Canvas>
+        <ListBox Name="InputList" Canvas.Left="6" Canvas.Top="19" Width="297" Height="199"
+                 ItemsSource="{Binding InputFiles}" SelectedItem="{Binding SelectedInputFile}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" DragDrop.AllowDrop="True" />
+        <Button Canvas.Left="309" Canvas.Top="19" Width="29" Height="27" Content="+" Click="OnAddFiles"
+                ToolTip.Tip="Add files (.raw, .mzXML, .mzML, .ms2, .mgf, timsTOF .d.tar)" />
+        <Button Canvas.Left="309" Canvas.Top="54" Width="29" Height="27" Content="-" Click="OnRemoveFile"
+                ToolTip.Tip="Remove the selected file" />
+        <Button Canvas.Left="309" Canvas.Top="89" Width="29" Height="27" Content=".d" Click="OnAddFolders"
+                ToolTip.Tip="Add timsTOF .d folders" />
+
+        <HeaderedContentControl Classes="groupbox" Header="Experiment Type"
+                                Canvas.Left="356" Canvas.Top="19" Width="274" Height="62">
+          <Canvas>
+            <RadioButton Canvas.Left="21" Canvas.Top="25" GroupName="ExpType" Content="Data Dependent"
+                         IsChecked="{Binding IsDda}" />
+            <RadioButton Canvas.Left="145" Canvas.Top="25" GroupName="ExpType" Content="Data Independent"
+                         IsChecked="{Binding IsDia}" />
+          </Canvas>
+        </HeaderedContentControl>
+
+        <HeaderedContentControl Classes="groupbox" Header="Options"
+                                Canvas.Left="356" Canvas.Top="87" Width="274" Height="129">
+          <Canvas>
+            <CheckBox Canvas.Left="14" Canvas.Top="26" Content="Select monoisotopic m/z in DDA"
+                      IsChecked="{Binding MassCorrectionChecked}" IsEnabled="{Binding MassCorrectionEnabled}" />
+            <CheckBox Canvas.Left="14" Canvas.Top="49" Content="Export Centroided Peaks in MS1"
+                      IsChecked="{Binding CentroidChecked}" IsEnabled="{Binding CentroidEnabled}" />
+            <CheckBox Canvas.Left="14" Canvas.Top="72" Content="Predict precursors in DIA"
+                      IsChecked="{Binding PredictDiaChecked}" IsEnabled="{Binding PredictDiaEnabled}" />
+            <TextBlock Canvas.Left="12" Canvas.Top="101" Text="Number Of Threads: " />
+            <TextBox Canvas.Left="120" Canvas.Top="98" Width="148" Height="20" Text="{Binding ThreadCountText}"
+                     />
+          </Canvas>
+        </HeaderedContentControl>
+      </Canvas>
+    </HeaderedContentControl>
+
+    <HeaderedContentControl Classes="groupbox" Header="Output" IsEnabled="{Binding IsIdle}"
+                            Canvas.Left="16" Canvas.Top="266" Width="636" Height="132">
+      <Canvas>
+        <TextBlock Canvas.Left="6" Canvas.Top="22" Text="Destination Directory: " />
+        <TextBox Canvas.Left="118" Canvas.Top="19" Width="449" Height="20" Text="{Binding OutputDirectory}"
+                 />
+        <Button Canvas.Left="573" Canvas.Top="19" Width="57" Height="20" Content="Browse" Click="OnBrowse"
+                />
+        <TextBlock Canvas.Left="6" Canvas.Top="70" Text="Output Formats: " />
+        <ComboBox Canvas.Left="114" Canvas.Top="66" Width="278" Height="21"
+                  ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}"
+                  PlaceholderText="Choose the output format..." />
+        <CheckBox Canvas.Left="411" Canvas.Top="57" Content="MS1" IsChecked="{Binding Ms1Checked}" IsEnabled="{Binding Ms1Enabled}" />
+        <CheckBox Canvas.Left="490" Canvas.Top="57" Content="MS2" IsChecked="{Binding Ms2Checked}" IsEnabled="{Binding Ms2Enabled}" />
+        <CheckBox Canvas.Left="567" Canvas.Top="57" Content="MS3" IsChecked="{Binding Ms3Checked}" IsEnabled="{Binding Ms3Enabled}" />
+        <CheckBox Canvas.Left="411" Canvas.Top="83" Content="MGF" IsChecked="{Binding MgfChecked}" IsEnabled="{Binding MgfEnabled}" />
+        <CheckBox Canvas.Left="490" Canvas.Top="80" Content="mzXML" IsChecked="{Binding MzXmlChecked}" IsEnabled="{Binding MzXmlEnabled}" />
+        <CheckBox Canvas.Left="567" Canvas.Top="80" Content="mzML" IsChecked="{Binding MzMlChecked}" IsEnabled="{Binding MzMlEnabled}" />
+        <CheckBox Canvas.Left="411" Canvas.Top="109" Content="Log" IsChecked="{Binding LogChecked}" IsEnabled="{Binding LogEnabled}" />
+      </Canvas>
+    </HeaderedContentControl>
+
+    <TextBlock Canvas.Left="19" Canvas.Top="409" Text="{Binding FileProcessingLabel}" />
+    <ProgressBar Canvas.Left="16" Canvas.Top="426" Width="554" Height="22" Minimum="0" Maximum="100"
+                 Value="{Binding ProgressPercent}" />
+    <Button Canvas.Left="576" Canvas.Top="421" Width="75" Height="29" Content="{Binding GoButtonText}" Click="OnGo" />
+
+    <HeaderedContentControl Classes="groupbox" Header="Log"
+                            Canvas.Left="16" Canvas.Top="459" Width="636" Height="165">
+      <Canvas>
+        <ListBox Name="LogList" Canvas.Left="6" Canvas.Top="20" Width="624" Height="134" ItemsSource="{Binding LogLines}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+      </Canvas>
+    </HeaderedContentControl>
+  </Canvas>
+</Window>
