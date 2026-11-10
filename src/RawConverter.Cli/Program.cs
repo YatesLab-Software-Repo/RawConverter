@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 
 using RawConverter.Common;
@@ -161,7 +160,7 @@ namespace RawConverter.Cli
             }
             if (cl.ShowVersion)
             {
-                Console.WriteLine("RawConverter " + Version());
+                Console.WriteLine("RawConverter " + ConversionRunner.Version);
                 Console.WriteLine(ConversionRunner.BrukerNotice);
                 return 0;
             }
@@ -215,21 +214,12 @@ namespace RawConverter.Cli
             return 0;
         }
 
-        private static string Version()
-        {
-            Assembly assembly = typeof(ConversionRunner).Assembly;
-            string version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-                ?? assembly.GetName().Version?.ToString();
-            // drop the source revision suffix ("1.2.0+abcdef");
-            return version?.Split('+')[0];
-        }
-
         /// <summary>
         /// Print the usage of this program.
         /// </summary>
         private static void Usage()
         {
-            Console.WriteLine("RawConverter " + Version());
+            Console.WriteLine("RawConverter " + ConversionRunner.Version);
             Console.WriteLine("Usage:");
             Console.WriteLine("\tRawConverter <input_file> [<input_file> ...] [options]");
             Console.WriteLine("\tInput files: .raw, .mzXML, .mzML, .ms2 (to MGF), .mgf (to MS2),");

@@ -32,5 +32,5 @@ The reference hashes were recorded from the pre-restructure `RawConverterDotNetC
 and prints the actual hashes. If a change in output is intended, paste the new hashes into `cases.json`.
 
 The `timstof_dda` hashes are of this port's output. It was checked against the TimsTOF_extractor script (with
-its MS1 crash fixed): the MS2 file is identical apart from the `H	Date Converted` line, and every MS1 scan
+its MS1 crash fixed): the MS2 file is identical apart from the `H` header lines, and every MS1 scan
 contains the same lines. Only the order of peaks with equal m/z differs, because numpy's sort is not stable.

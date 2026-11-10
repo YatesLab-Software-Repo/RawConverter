@@ -1,4 +1,3 @@
-using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
@@ -9,8 +8,7 @@ namespace RawConverter.Gui.Views
         public AboutWindow()
         {
             InitializeComponent();
-            string version = typeof(ConversionRunner).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-            VersionText.Text = "Version " + version?.Split('+')[0];
+            VersionText.Text = "Version " + ConversionRunner.Version;
             BrukerText.Text = ConversionRunner.BrukerNotice;
         }
 

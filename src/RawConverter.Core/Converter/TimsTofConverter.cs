@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using Microsoft.Data.Sqlite;
 using RawConverter.Bruker;
@@ -21,7 +20,6 @@ namespace RawConverter.Converter
     /// </summary>
     internal class TimsTofConverter
     {
-        private const string ExtractorVersion = "0.2.4";
         private const double ProtonMass = 1.007276466;
         private const int BatchSize = 1000;
 
@@ -112,12 +110,12 @@ namespace RawConverter.Converter
             // FirstScan/LastScan come from the unfiltered precursor list, as in the script;
             Precursor first = precursors[0], last = precursors[precursors.Count - 1];
             string date = DateTime.Now.ToString("MMMM dd, yyyy HH:mm", CultureInfo.GetCultureInfo("en-US"));
-            writer.Write("H\tExtractor\tTimsTOF_extractor\n"
-                + "H\tExtractorVersion\t" + ExtractorVersion + "\n"
-                + "H\tPublicationDate\t20-02-2020\n"
+            writer.Write("H\tExtractor\tRawConverter\n"
+                + "H\tExtractorVersion\t" + ConversionRunner.Version + "\n"
                 + "H\tDate Converted\t" + date + "\n"
                 + "H\tComments\tTimsTOF_extractor written by Yu Gao, 2018\n"
                 + "H\tComments\tTimsTOF_extractor modified by Titus Jung, 2023\n"
+                + "H\tComments\tTimsTOF_extractor ported to RawConverter by Titus Jung, 2026\n"
                 + "H\tExtractorOptions\tMSn\n"
                 + "H\tAcquisitionMethod\tData-Dependent\n"
                 + "H\tInstrumentType\tTIMSTOF\n"
@@ -173,11 +171,11 @@ namespace RawConverter.Converter
             TaskProgress progress, ref int done, int total)
         {
             using StreamWriter writer = CreateWriter(_ms1File);
-            writer.Write("H\tExtractor\tTimsTOF_extractor\n"
-                + "H\tExtractorVersion\t" + ExtractorVersion + "\n"
-                + "H\tPublicationDate\t20-02-2020\n"
+            writer.Write("H\tExtractor\tRawConverter\n"
+                + "H\tExtractorVersion\t" + ConversionRunner.Version + "\n"
                 + "H\tComments\tTimsTOF_extractor written by Yu Gao, 2018\n"
                 + "H\tComments\tTimsTOF_extractor modified by Titus Jung, 2019\n"
+                + "H\tComments\tTimsTOF_extractor ported to RawConverter by Titus Jung, 2026\n"
                 + "H\tExtractorOptions\tMSn\n"
                 + "H\tAcquisitionMethod\tData-Dependent\n"
                 + "H\tInstrumentType\tTIMSTOF\n"
@@ -246,7 +244,6 @@ namespace RawConverter.Converter
             Dictionary<long, List<Precursor>> byParent = written.GroupBy(p => p.Parent).ToDictionary(g => g.Key, g => g.ToList());
             string Meta(string key) => metadata.TryGetValue(key, out string value) && !string.IsNullOrEmpty(value) ? value : "unknown";
             string model = Meta("InstrumentName");
-            string version = typeof(TimsTofConverter).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0];
 
             MzXMLFileWriter writer = new MzXMLFileWriter(_mzXmlFile);
             try
@@ -254,7 +251,7 @@ namespace RawConverter.Converter
                 // the parent file is analysis.tdf, which identifies the run, rather than the much larger .tdf_bin;
                 writer.WriteHeader(ms1Frames.Count + written.Count, ms1Frames.Count > 0 ? ms1Frames[0].Time : 0,
                     ms1Frames.Count > 0 ? ms1Frames[ms1Frames.Count - 1].Time : 0, _tdfFile, "Bruker Daltonics", model,
-                    "nanoelectrospray", model, model, "acquisition", Meta("AcquisitionSoftware"), Meta("AcquisitionSoftwareVersion"), version);
+                    "nanoelectrospray", model, model, "acquisition", Meta("AcquisitionSoftware"), Meta("AcquisitionSoftwareVersion"), ConversionRunner.Version);
 
                 foreach (Frame frame in ms1Frames)
                 {

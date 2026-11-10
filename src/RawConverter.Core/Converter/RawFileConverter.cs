@@ -199,10 +199,8 @@ namespace RawConverter.Converter
             String filter = null;
             //_rawReader.GetFilterForScanNum(FirstScanNum, ref filter);
             filter = _rawReader.GetFilterForScanNumber(FirstScanNum).ToString();
-            String rawConverterVersion = "1.0.0.x";
-
             _mzXMLWriter.WriteHeader(scanCount, startTime * 60, endTime * 60, rawFileName, "Thermo Scientific",
-                msModel, "nanoelectrospray", msModel, msModel, "acquisition", "Xcalibur", softwareVersion, rawConverterVersion);
+                msModel, "nanoelectrospray", msModel, msModel, "acquisition", "Xcalibur", softwareVersion, ConversionRunner.Version);
         }
 
         public void SetOptions(bool isCentroided, int mzDecimalPlace, int intensityDecimalPlace, bool extractPrecByMz, 

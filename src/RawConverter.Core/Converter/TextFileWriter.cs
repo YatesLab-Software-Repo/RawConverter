@@ -20,11 +20,12 @@ namespace RawConverter.Converter
             //Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             string msnHeader = "H\tCreation Date\t" + DateTime.Now.ToString() + "\n"
                 + "H\tExtractor\tRawConverter\n"
-                + "H\tExtractorVersion\t1.1.0.18\n"
+                + "H\tExtractorVersion\t" + ConversionRunner.Version + "\n"
                 + "H\tComments\tRawConverter written by Lin He, 2014\n"
                 + "H\tComments\tRawConverter modified by Yen-Yin Chu, 2015\n"
                 + "H\tComments\tRawConverter modified by Rohan Rampuria, 2016\n"
                 + "H\tComments\tRawConverter ported to DotNetCore Titus Jung, 2020\n"
+                + "H\tComments\tRawConverter unified under .NET 10 with timsTOF support by Titus Jung, 2026\n"
                 + "H\tExtractorOptions\tMSn\n"
                 + "H\tAcquisitionMethod\tData-Dependent\n"
                 + "H\tInstrumentType\t" + spec.InstrumentType + "\n"

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -119,6 +120,13 @@ namespace RawConverter
         /// </summary>
         public const string BrukerNotice =
             "Included software components: Copyright © 2022 by Bruker Daltonics GmbH & Co. KG. All rights reserved.";
+
+        /// <summary>
+        /// The RawConverter version (from Directory.Build.props), without the source revision suffix ("1.2.0+abcdef").
+        /// </summary>
+        public static readonly string Version = (typeof(ConversionRunner).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? typeof(ConversionRunner).Assembly.GetName().Version?.ToString())?.Split('+')[0];
 
         /// <summary>
         /// Whether the path is a Bruker timsTOF .d folder (one .tdf and one .tdf_bin file).
