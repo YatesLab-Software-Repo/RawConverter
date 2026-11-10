@@ -1,0 +1,108 @@
+; Inno Setup script for the Windows installer; build it with packaging/windows/build-installer.sh.
+; AppVersion, SourceDir and RedistDir are passed in by the build script (/D...).
+
+#ifndef AppVersion
+  #define AppVersion "0.0.0"
+#endif
+#ifndef SourceDir
+  #define SourceDir "..\..\out\RawConverter-win-x64"
+#endif
+#ifndef RedistDir
+  #define RedistDir "cache"
+#endif
+
+[Setup]
+; keep AppId unchanged across versions so upgrades replace the previous installation;
+AppId={{5B8E2F4C-7A3D-4E61-9C2B-0D1F6A8E3B57}
+AppName=RawConverter
+AppVersion={#AppVersion}
+AppVerName=RawConverter {#AppVersion}
+AppPublisher=Yates Lab, The Scripps Research Institute
+AppPublisherURL=https://github.com/YatesLab-Software-Repo/RawConverter
+DefaultDirName={autopf}\RawConverter
+DefaultGroupName=RawConverter
+DisableProgramGroupPage=yes
+LicenseFile=..\..\LICENSE
+OutputBaseFilename=RawConverter-{#AppVersion}-win-x64-setup
+OutputDir=..\..\out
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+; the Visual C++ runtime needs administrator rights;
+PrivilegesRequired=admin
+ChangesEnvironment=yes
+UninstallDisplayIcon={app}\RawConverterGUI.exe
+Compression=lzma2/max
+SolidCompression=yes
+WizardStyle=modern
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "addtopath"; Description: "Add the RawConverter command-line tool to PATH"; GroupDescription: "Command line:"
+
+[Files]
+; Linux libraries and debug symbols are not needed on Windows;
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "*.so,*.pdb"; Flags: ignoreversion recursesubdirs
+Source: "..\..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\Licenses\*"; DestDir: "{app}\Licenses"; Flags: ignoreversion recursesubdirs
+; Bruker's timsdata.dll needs the Visual C++ 2015-2022 runtime (MSVCP140, VCRUNTIME140_1, VCOMP140);
+Source: "{#RedistDir}\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsVcRedist
+
+[Icons]
+Name: "{group}\RawConverter"; Filename: "{app}\RawConverterGUI.exe"
+Name: "{group}\Uninstall RawConverter"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\RawConverter"; Filename: "{app}\RawConverterGUI.exe"; Tasks: desktopicon
+
+[Registry]
+Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueType: expandsz; \
+    ValueName: "Path"; ValueData: "{olddata};{app}"; Tasks: addtopath; Check: NotInPath(ExpandConstant('{app}'))
+
+[Run]
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; \
+    StatusMsg: "Installing the Microsoft Visual C++ runtime..."; Flags: waituntilterminated; Check: NeedsVcRedist
+Filename: "{app}\RawConverterGUI.exe"; Description: "{cm:LaunchProgram,RawConverter}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+// The runtime registers itself here; version 14.40 or later covers VCRUNTIME140_1 and VCOMP140 of VS 2022.
+function NeedsVcRedist: Boolean;
+var
+  Installed, Major, Minor: Cardinal;
+begin
+  Result := True;
+  if RegQueryDWordValue(HKLM64, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Installed', Installed)
+    and (Installed = 1)
+    and RegQueryDWordValue(HKLM64, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Major', Major)
+    and RegQueryDWordValue(HKLM64, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64', 'Minor', Minor) then
+    Result := (Major < 14) or ((Major = 14) and (Minor < 40));
+end;
+
+function NotInPath(Dir: string): Boolean;
+var
+  Path: string;
+begin
+  if not RegQueryStringValue(HKLM, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', Path) then
+  begin
+    Result := True;
+    exit;
+  end;
+  Result := Pos(';' + Uppercase(Dir) + ';', ';' + Uppercase(Path) + ';') = 0;
+end;
+
+// Remove the installation folder from PATH on uninstall.
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  Path, Dir: string;
+  P: Integer;
+begin
+  if CurUninstallStep <> usPostUninstall then
+    exit;
+  if not RegQueryStringValue(HKLM, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', Path) then
+    exit;
+  Dir := ExpandConstant('{app}');
+  Path := ';' + Path + ';';
+  P := Pos(';' + Uppercase(Dir) + ';', Uppercase(Path));
+  if P = 0 then
+    exit;
+  Delete(Path, P, Length(Dir) + 1);
+  Path := Copy(Path, 2, Length(Path) - 2);
+  RegWriteExpandStringValue(HKLM, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', Path);
+end;

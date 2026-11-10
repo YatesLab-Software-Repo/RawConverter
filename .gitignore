@@ -6,3 +6,4 @@ out/
 *.zip
 *.user
 .vs/
+packaging/windows/cache/

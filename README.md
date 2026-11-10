@@ -29,6 +29,10 @@ dotnet test RawConverter.sln
 ./build.sh        # build, test, and publish self-contained Linux and Windows builds into out/
 ```
 
+`packaging/windows/build-installer.sh` builds the Windows installer, `out/RawConverter-<version>-win-x64-setup.exe`,
+on Linux with Inno Setup in Docker (`amake/innosetup`). It installs the GUI and the CLI (optionally on PATH), the
+license files, and the Microsoft Visual C++ runtime that Bruker's `timsdata.dll` needs, if it is missing.
+
 ## GUI
 
 `RawConverterGUI` reproduces the legacy WinForms window and menus on Windows and Linux. Besides the legacy
