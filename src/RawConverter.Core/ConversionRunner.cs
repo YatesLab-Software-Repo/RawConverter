@@ -323,13 +323,14 @@ namespace RawConverter
         // the TimsTOF_extractor script, whose order depends on the numpy version;
         private static void CheckTimsTofOutputFormats(string input, ConversionOptions options)
         {
-            if (!options.OutputFormats.HasFlag(OutputFormat.MS2))
+            const OutputFormat supported = OutputFormat.MS2 | OutputFormat.MzXML;
+            if ((options.OutputFormats & supported) == 0)
             {
-                throw new ArgumentException("timsTOF input can only be converted to MS2.");
+                throw new ArgumentException("timsTOF input can only be converted to MS2 and mzXML.");
             }
-            if ((options.OutputFormats & ~OutputFormat.MS2) != 0)
+            if ((options.OutputFormats & ~supported) != 0)
             {
-                Log.Warning("timsTOF input only produces MS2 files; other formats are skipped for " + input);
+                Log.Warning("timsTOF input only produces MS2 and mzXML files; other formats are skipped for " + input);
             }
         }
 
@@ -351,7 +352,8 @@ namespace RawConverter
                 Directory.CreateDirectory(outFolder);
             }
 
-            new TimsTofConverter(analysisDir, outFolder, false, true).Convert(progress, progressStart);
+            new TimsTofConverter(analysisDir, outFolder, false, options.OutputFormats.HasFlag(OutputFormat.MS2),
+                options.OutputFormats.HasFlag(OutputFormat.MzXML)).Convert(progress, progressStart);
             Log.Info(" Conversion finished: " + analysisDir);
         }
 

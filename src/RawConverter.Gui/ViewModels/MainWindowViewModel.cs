@@ -231,7 +231,7 @@ namespace RawConverter.Gui.ViewModels
         private string ApplyOutputFormat(int index)
         {
             const string same = "The input and the output formats cannot be the same!";
-            const string timsTof = "timsTOF input can only be converted to MS2!";
+            const string timsTof = "timsTOF input can only be converted to MS2 and mzXML!";
             switch (index)
             {
                 case 0: // MS1, MS2, and MS3;
@@ -273,7 +273,7 @@ namespace RawConverter.Gui.ViewModels
                 case 2: // mzXML;
                 case 3: // mzML;
                     bool mzXml = index == 2;
-                    if (CurrentInputFormat != null && !IsFormat(".RAW"))
+                    if (CurrentInputFormat != null && !IsFormat(".RAW") && !(mzXml && IsTimsTofInput))
                     {
                         SetOutputChoices(false, false, false, false, false, false, false);
                         SetOutputChecks(false, false, false, false, mzXml, !mzXml, false);

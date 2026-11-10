@@ -1,7 +1,7 @@
 # RawConverter
 
 Converts Thermo RAW files (and mzXML, mzML, MS2 and MGF files) to MS1, MS2, MS3, MGF and mzXML, and Bruker
-timsTOF DDA-PASEF data (`.d` folders) to MS2.
+timsTOF DDA-PASEF data (`.d` folders) to MS2 and mzXML.
 It can also correct DDA precursor m/z values and predict DIA precursors. Runs on Linux and Windows (x64)
 with .NET 10, using Thermo's RawFileReader library (no Wine or MSFileReader needed).
 
@@ -68,6 +68,13 @@ TimsTOF_extractor script (`extract_msn_nopd.py` 0.2.4) and writes the same MS2 o
 inside the `.d` folder. MS2 scans are written for precursors with a monoisotopic m/z and charge 2+ or higher.
 MS1 output is disabled for now (`--ms1` is skipped with a warning), and DIA data is not supported yet.
 
+`--mzxml` writes `<name>.mzXML` next to the MS2 file, with the same scan numbers: each MS1 frame, summed over ion
+mobility and centroided by Bruker's SDK (`tims_extract_centroided_spectrum_for_frame_v2`), followed by the MS2 scans
+of its precursors (the same peaks as the MS2 file, stored as 32-bit floats). mzXML has no ion-mobility field, so each
+MS2 scan's `filterLine` carries the precursor's 1/K0, e.g. `TIMSTOF + MS2 1/K0=1.0234` (the `I	Ion Mobility` value of
+the MS2 file); MS1 scans have none. Precursors whose MS2 spectrum has no peaks, which the MS2 file leaves out, are
+written as empty scans.
+
 A `.d` folder in a tar archive (`sample.d.tar`, `.tar.gz` or `.tgz`) can be passed directly. The `.d` folder is
-extracted next to the archive (an existing one is reused), and the MS2 file is written next to the `.d`
+extracted next to the archive (an existing one is reused), and the output files are written next to the `.d`
 folder unless `--out_folder` is given. The archive must hold a single top-level `.d` folder.

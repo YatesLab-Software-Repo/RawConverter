@@ -233,9 +233,9 @@ namespace RawConverter.Cli
             Console.WriteLine("Usage:");
             Console.WriteLine("\tRawConverter <input_file> [<input_file> ...] [options]");
             Console.WriteLine("\tInput files: .raw, .mzXML, .mzML, .ms2 (to MGF), .mgf (to MS2),");
-            Console.WriteLine("\t             Bruker timsTOF DDA-PASEF .d folders (to MS2 only; written inside the .d by default),");
+            Console.WriteLine("\t             Bruker timsTOF DDA-PASEF .d folders (to MS2 and mzXML; written inside the .d by default),");
             Console.WriteLine("\t             or a .d folder in a .tar/.tar.gz/.tgz (the .d is extracted next to the archive,");
-            Console.WriteLine("\t             and the MS2 file is written next to the .d by default)");
+            Console.WriteLine("\t             and the output is written next to the .d by default)");
             Console.WriteLine("\tOptions:");
             Console.WriteLine("\t\t--ms1\toutput MS1 file.");
             Console.WriteLine("\t\t--ms2\toutput MS2 file.");

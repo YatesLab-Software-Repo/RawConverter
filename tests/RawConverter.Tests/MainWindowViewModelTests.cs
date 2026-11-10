@@ -86,7 +86,9 @@ namespace RawConverter.Tests
         [InlineData("x.ms2", 1, false, false, false, false, false, null)]
         [InlineData("x.mgf", 2, false, false, false, false, false, "The input can only be RAW files if mzXML is selected")]
         [InlineData("x.d.tar", 0, false, true, false, false, false, null)]
-        [InlineData("x.d.tar", 1, false, false, false, false, false, "timsTOF input can only be converted to MS2!")]
+        [InlineData("x.d.tar", 1, false, false, false, false, false, "timsTOF input can only be converted to MS2 and mzXML!")]
+        [InlineData("x.d.tar", 2, false, false, false, false, false, null)]
+        [InlineData("x.d.tar", 3, false, false, false, false, false, "timsTOF input can only be converted to MS2 and mzXML!")]
         public async Task OutputChoicesFollowTheLegacyRules(string input, int formatIndex,
             bool ms1, bool ms2, bool ms3, bool mgf, bool mzXml, string warning)
         {

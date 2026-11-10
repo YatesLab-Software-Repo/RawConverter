@@ -3,18 +3,21 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Microsoft.Data.Sqlite;
 using RawConverter.Bruker;
 using RawConverter.Common;
+using RawConverter.MassSpec;
 
 namespace RawConverter.Converter
 {
     /// <summary>
-    /// Converts Bruker timsTOF DDA-PASEF data (a .d folder with analysis.tdf and analysis.tdf_bin) to MS1 and
-    /// MS2 files. Port of the TimsTOF_extractor script (extract_msn_nopd.py, version 0.2.4); the output
-    /// matches it, except that MS1 output works (the script opened an empty file name, and failed on MS1
-    /// frames without peaks).
+    /// Converts Bruker timsTOF DDA-PASEF data (a .d folder with analysis.tdf and analysis.tdf_bin) to MS1, MS2
+    /// and mzXML files. MS1 and MS2 are a port of the TimsTOF_extractor script (extract_msn_nopd.py, version
+    /// 0.2.4); the output matches it, except that MS1 output works (the script opened an empty file name, and
+    /// failed on MS1 frames without peaks). mzXML has the same scan numbers, with MS1 frames centroided by the
+    /// SDK and the precursor's 1/K0 in each MS2 scan's filterLine.
     /// </summary>
     internal class TimsTofConverter
     {
@@ -28,6 +31,7 @@ namespace RawConverter.Converter
         private readonly string _tdfFile;
         private readonly string _ms1File;
         private readonly string _ms2File;
+        private readonly string _mzXmlFile;
         private int _progressStart;
 
         public static bool IsTimsTofDirectory(string path)
@@ -38,7 +42,7 @@ namespace RawConverter.Converter
         }
 
         /// <param name="outFolder">null writes the output inside the .d folder, as the script did.</param>
-        public TimsTofConverter(string analysisDir, string outFolder, bool writeMs1, bool writeMs2)
+        public TimsTofConverter(string analysisDir, string outFolder, bool writeMs1, bool writeMs2, bool writeMzXml = false)
         {
             _analysisDir = Path.GetFullPath(analysisDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             _tdfFile = Directory.GetFiles(_analysisDir, "*.tdf")[0];
@@ -48,6 +52,7 @@ namespace RawConverter.Converter
             string folder = string.IsNullOrEmpty(outFolder) ? _analysisDir : outFolder;
             _ms1File = writeMs1 ? Path.Combine(folder, name + ".ms1") : null;
             _ms2File = writeMs2 ? Path.Combine(folder, name + ".ms2") : null;
+            _mzXmlFile = writeMzXml ? Path.Combine(folder, name + ".mzXML") : null;
         }
 
         /// <param name="progressStart">progress percentage to start from (when extraction came first)</param>
@@ -70,6 +75,7 @@ namespace RawConverter.Converter
 
             List<Frame> allFrames = ReadFrames(conn);
             List<Precursor> precursors = ReadPrecursors(conn);
+            Dictionary<string, string> metadata = ReadGlobalMetadata(conn);
             conn.Close();
 
             List<Frame> ms1Frames = allFrames.Where(f => f.MsMsType == 0).ToList();
@@ -77,7 +83,8 @@ namespace RawConverter.Converter
 
             using TimsData td = new TimsData(_analysisDir);
             List<Precursor> written = precursors.Where(p => p.MonoisotopicMz.HasValue && p.Charge.HasValue && p.Charge > 1).ToList();
-            int total = (_ms2File != null ? written.Count : 0) + (_ms1File != null ? ms1Frames.Count : 0);
+            int total = (_ms2File != null ? written.Count : 0) + (_ms1File != null ? ms1Frames.Count : 0)
+                + (_mzXmlFile != null ? ms1Frames.Count : 0);
             int done = 0;
 
             if (_ms2File != null)
@@ -89,6 +96,11 @@ namespace RawConverter.Converter
             {
                 Log.Info(" Output file: " + _ms1File);
                 WriteMs1(td, ms1Frames, ms1ScanNums, progress, ref done, total);
+            }
+            if (_mzXmlFile != null && !progress.Aborted)
+            {
+                Log.Info(" Output file: " + _mzXmlFile);
+                WriteMzXml(td, ms1Frames, written, ms1ScanNums, ms2ScanNums, metadata, progress, ref done, total);
             }
         }
 
@@ -224,6 +236,93 @@ namespace RawConverter.Converter
         }
 
         /// <summary>
+        /// One pass over the MS1 frames, each followed by the MS2 scans of its precursors, in scan-number order.
+        /// Precursors without peaks are written as empty scans, so that scanCount is known up front.
+        /// </summary>
+        private void WriteMzXml(TimsData td, List<Frame> ms1Frames, List<Precursor> written, Dictionary<long, int> ms1ScanNums,
+            Dictionary<long, Dictionary<long, int>> ms2ScanNums, Dictionary<string, string> metadata, TaskProgress progress,
+            ref int done, int total)
+        {
+            Dictionary<long, List<Precursor>> byParent = written.GroupBy(p => p.Parent).ToDictionary(g => g.Key, g => g.ToList());
+            string Meta(string key) => metadata.TryGetValue(key, out string value) && !string.IsNullOrEmpty(value) ? value : "unknown";
+            string model = Meta("InstrumentName");
+            string version = typeof(TimsTofConverter).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0];
+
+            MzXMLFileWriter writer = new MzXMLFileWriter(_mzXmlFile);
+            try
+            {
+                // the parent file is analysis.tdf, which identifies the run, rather than the much larger .tdf_bin;
+                writer.WriteHeader(ms1Frames.Count + written.Count, ms1Frames.Count > 0 ? ms1Frames[0].Time : 0,
+                    ms1Frames.Count > 0 ? ms1Frames[ms1Frames.Count - 1].Time : 0, _tdfFile, "Bruker Daltonics", model,
+                    "nanoelectrospray", model, model, "acquisition", Meta("AcquisitionSoftware"), Meta("AcquisitionSoftwareVersion"), version);
+
+                foreach (Frame frame in ms1Frames)
+                {
+                    int ms1Scan = ms1ScanNums[frame.Id];
+                    (double[] mz, float[] area) = td.ExtractCentroidedSpectrum(frame.Id, 0, (uint)frame.NumScans);
+                    writer.WriteScan(CreateSpectrum(ms1Scan, 1, frame.Time, mz, area, "TIMSTOF " + frame.Polarity + " MS1"));
+
+                    if (byParent.TryGetValue(frame.Id, out List<Precursor> children))
+                    {
+                        Dictionary<long, (double[] Mz, float[] Area)> spectra = td.ReadPasefMsMs(children.Select(p => p.Id).ToArray());
+                        foreach (Precursor p in children)
+                        {
+                            if (!spectra.TryGetValue(p.Id, out var spectrum))
+                            {
+                                spectrum = (Array.Empty<double>(), Array.Empty<float>());
+                            }
+                            double k0 = td.ScanNumToOneOverK0(p.Parent, new[] { p.ScanNumber })[0];
+                            // the retention time is the parent frame's, as in the MS2 file;
+                            MassSpectrum spec = CreateSpectrum(ms2ScanNums[p.Parent][p.Id], 2, frame.Time, spectrum.Mz, spectrum.Area,
+                                "TIMSTOF " + frame.Polarity + " MS2 1/K0=" + k0.ToString("F4", Inv));
+                            spec.PrecursorScanNumber = ms1Scan;
+                            spec.PrecursorIntensity = p.Intensity ?? 0;
+                            spec.Precursors = new List<Tuple<double, int>> { Tuple.Create(p.MonoisotopicMz.Value, (int)p.Charge.Value) };
+                            writer.WriteScan(spec);
+                        }
+                    }
+
+                    ReportProgress(progress, ++done, total);
+                    if (progress.Aborted)
+                    {
+                        return;
+                    }
+                }
+                writer.WriteIndex();
+                writer.WriteEnd();
+            }
+            finally
+            {
+                writer.Close();
+            }
+        }
+
+        private static MassSpectrum CreateSpectrum(int scanNum, int msLevel, double timeInSeconds, double[] mz, float[] area, string filter)
+        {
+            List<Ion> peaks = new List<Ion>(mz.Length);
+            Ion basePeak = null;
+            double tic = 0;
+            for (int i = 0; i < mz.Length; i++)
+            {
+                Ion ion = new Ion(mz[i], area[i]);
+                peaks.Add(ion);
+                tic += ion.Intensity;
+                if (basePeak == null || ion.Intensity > basePeak.Intensity)
+                {
+                    basePeak = ion;
+                }
+            }
+            return new MassSpectrum(scanNum, scanNum.ToString(Inv), timeInSeconds / 60, peaks, 0, InstrumentType.ELSE, filter, 0, msLevel > 1)
+            {
+                MsLevel = msLevel,
+                ActivationMethod = Activation.CID,
+                BasePeakMz = basePeak?.MZ ?? 0,
+                BasePeakIntensity = basePeak?.Intensity ?? 0,
+                TotIonCurrent = tic,
+            };
+        }
+
+        /// <summary>
         /// numpy.around(x, 4): scale, round half to even, unscale.
         /// </summary>
         private static double RoundNumpy4(double x)
@@ -288,7 +387,8 @@ namespace RawConverter.Converter
             using SqliteCommand cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT * FROM Frames";
             using SqliteDataReader r = cmd.ExecuteReader();
-            int id = r.GetOrdinal("Id"), time = r.GetOrdinal("Time"), type = r.GetOrdinal("MsMsType"), scans = r.GetOrdinal("NumScans");
+            int id = r.GetOrdinal("Id"), time = r.GetOrdinal("Time"), type = r.GetOrdinal("MsMsType"), scans = r.GetOrdinal("NumScans"),
+                polarity = r.GetOrdinal("Polarity");
             while (r.Read())
             {
                 frames.Add(new Frame
@@ -297,6 +397,7 @@ namespace RawConverter.Converter
                     Time = r.GetDouble(time),
                     MsMsType = r.GetInt32(type),
                     NumScans = r.GetInt32(scans),
+                    Polarity = r.GetString(polarity),
                 });
             }
             return frames;
@@ -309,7 +410,7 @@ namespace RawConverter.Converter
             cmd.CommandText = "SELECT * FROM Precursors";
             using SqliteDataReader r = cmd.ExecuteReader();
             int id = r.GetOrdinal("Id"), mono = r.GetOrdinal("MonoisotopicMz"), charge = r.GetOrdinal("Charge"),
-                scan = r.GetOrdinal("ScanNumber"), parent = r.GetOrdinal("Parent");
+                scan = r.GetOrdinal("ScanNumber"), intensity = r.GetOrdinal("Intensity"), parent = r.GetOrdinal("Parent");
             while (r.Read())
             {
                 precursors.Add(new Precursor
@@ -318,10 +419,24 @@ namespace RawConverter.Converter
                     MonoisotopicMz = r.IsDBNull(mono) ? (double?)null : r.GetDouble(mono),
                     Charge = r.IsDBNull(charge) ? (long?)null : r.GetInt64(charge),
                     ScanNumber = r.GetDouble(scan),
+                    Intensity = r.IsDBNull(intensity) ? (double?)null : r.GetDouble(intensity),
                     Parent = r.GetInt64(parent),
                 });
             }
             return precursors;
+        }
+
+        private static Dictionary<string, string> ReadGlobalMetadata(SqliteConnection conn)
+        {
+            Dictionary<string, string> metadata = new Dictionary<string, string>();
+            using SqliteCommand cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT Key, Value FROM GlobalMetadata";
+            using SqliteDataReader r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                metadata[r.GetString(0)] = r.IsDBNull(1) ? null : r.GetString(1);
+            }
+            return metadata;
         }
 
         private static StreamWriter CreateWriter(string path)
@@ -341,6 +456,7 @@ namespace RawConverter.Converter
             public double Time;
             public int MsMsType;
             public int NumScans;
+            public string Polarity;
         }
 
         private class Precursor
@@ -349,6 +465,7 @@ namespace RawConverter.Converter
             public double? MonoisotopicMz;
             public long? Charge;
             public double ScanNumber;
+            public double? Intensity;
             public long Parent;
         }
     }

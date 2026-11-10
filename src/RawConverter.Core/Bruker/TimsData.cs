@@ -34,6 +34,13 @@ namespace RawConverter.Bruker
         [DllImport(Lib)]
         private static extern uint tims_read_pasef_msms(ulong handle, long[] precursors, uint numPrecursors, MsMsSpectrumCallback callback);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void SpectrumCallback(long id, uint numPeaks, IntPtr mzValues, IntPtr areaValues, IntPtr userData);
+
+        [DllImport(Lib)]
+        private static extern uint tims_extract_centroided_spectrum_for_frame_v2(ulong handle, long frameId, uint scanBegin, uint scanEnd,
+            SpectrumCallback callback, IntPtr userData);
+
         [DllImport(Lib)]
         private static extern uint tims_index_to_mz(ulong handle, long frameId, double[] input, double[] output, uint count);
 
@@ -139,6 +146,33 @@ namespace RawConverter.Bruker
                 ThrowLastError();
             }
             return result;
+        }
+
+        /// <summary>
+        /// Centroided spectrum of scans [scanBegin, scanEnd) of a frame, summed over ion mobility and peak-picked
+        /// with Bruker's algorithm and parameters, as m/z and area arrays.
+        /// </summary>
+        public (double[] Mz, float[] Area) ExtractCentroidedSpectrum(long frameId, uint scanBegin, uint scanEnd)
+        {
+            double[] mz = Array.Empty<double>();
+            float[] area = Array.Empty<float>();
+            SpectrumCallback callback = (id, numPeaks, mzValues, areaValues, userData) =>
+            {
+                mz = new double[numPeaks];
+                area = new float[numPeaks];
+                if (numPeaks > 0)
+                {
+                    Marshal.Copy(mzValues, mz, 0, (int)numPeaks);
+                    Marshal.Copy(areaValues, area, 0, (int)numPeaks);
+                }
+            };
+            uint rc = tims_extract_centroided_spectrum_for_frame_v2(_handle, frameId, scanBegin, scanEnd, callback, IntPtr.Zero);
+            GC.KeepAlive(callback);
+            if (rc == 0)
+            {
+                ThrowLastError();
+            }
+            return (mz, area);
         }
 
         private delegate uint ConversionFunction(ulong handle, long frameId, double[] input, double[] output, uint count);

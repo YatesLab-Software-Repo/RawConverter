@@ -81,10 +81,12 @@
       ],
       "args": [
         "--ms1",
-        "--ms2"
+        "--ms2",
+        "--mzxml"
       ],
       "outputs": {
-        "200ngHeLaPASEF_1min.ms2": "38ab1fdd3b70dfe53dd98ebab6672970f273c8c2e691df85fe4862d96203a917"
+        "200ngHeLaPASEF_1min.ms2": "38ab1fdd3b70dfe53dd98ebab6672970f273c8c2e691df85fe4862d96203a917",
+        "200ngHeLaPASEF_1min.mzXML": "7813ce2510bba094cc9040221d8d363d21c92ac953b2911d6b83b348849e8261"
       }
     }
   ]
