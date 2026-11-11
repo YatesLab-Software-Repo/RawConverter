@@ -1,0 +1,14 @@
+RawConverter
+Copyright 2016-2026 The Scripps Research Institute
+
+This product is developed by the Yates Lab, The Scripps Research Institute, and is licensed under the
+Apache License, Version 2.0 (see LICENSE).
+
+It includes third-party components, which remain under their own licenses (see the Licenses folder):
+
+- Thermo Fisher Scientific RawFileReader (ThermoFisher.CommonCore.*), under Thermo Finnigan LLC's
+  RawFileReader license agreement (Licenses/Thermo).
+- Bruker TDF SDK (timsdata.dll, libtimsdata.so).
+  Included software components: Copyright (c) 2022 by Bruker Daltonics GmbH & Co. KG. All rights reserved.
+  (Licenses/Bruker)
+- Parquet.Net and the libraries it uses, under the MIT and BSD-3-Clause licenses (Licenses/ParquetNet).

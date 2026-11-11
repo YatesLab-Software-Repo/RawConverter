@@ -41,9 +41,8 @@ Name: "addtopath"; Description: "Add the RawConverter command-line tool to PATH"
 
 [Files]
 ; Linux libraries and debug symbols are not needed on Windows;
+; the build output includes LICENSE, NOTICE and the third-party licenses (Licenses\);
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "*.so,*.pdb"; Flags: ignoreversion recursesubdirs
-Source: "..\..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\Licenses\*"; DestDir: "{app}\Licenses"; Flags: ignoreversion recursesubdirs
 ; Bruker's timsdata.dll needs the Visual C++ 2015-2022 runtime (MSVCP140, VCRUNTIME140_1, VCOMP140);
 Source: "{#RedistDir}\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsVcRedist
 

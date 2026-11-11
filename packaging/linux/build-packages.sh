@@ -16,12 +16,9 @@ for project in src/RawConverter.Cli/RawConverter.Cli.csproj src/RawConverter.Gui
         -o "$publish"
 done
 
-# Windows libraries and debug symbols are not needed on Linux.
+# Windows libraries and debug symbols are not needed on Linux. (The build output includes LICENSE, NOTICE and Licenses/.)
 cp -a "$publish" "$stage"
 rm -f "$stage"/*.pdb "$stage"/timsdata.dll "$stage"/lpsolve55.dll
-cp LICENSE "$stage"/
-mkdir -p "$stage"/Licenses
-cp -a Licenses/. "$stage"/Licenses/
 chmod -R u=rwX,go=rX "$stage"
 chmod 755 "$stage"/RawConverter "$stage"/RawConverterGUI
 
