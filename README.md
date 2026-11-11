@@ -73,9 +73,9 @@ with the corrected or predicted precursors when those options are on); spectra w
 spectrum with several precursor candidates (unknown charge, or predicted DIA precursors) gets the first one, and a
 charge of 0 is stored as null. As in that converter, `rt` is in minutes for Thermo, mzML and mzXML input and in
 seconds for timsTOF input; MS2 input keeps its `RetTime` values (seconds in MS2 files from timsTOF data). For
-timsTOF, MS1 frames are summed over ion mobility and centroided as in the mzXML output (`ion_mobility` is null),
-and MS2 rows carry the precursor's 1/K0 and its isolation window. It can be read with any Parquet library, e.g.
-`polars.read_parquet("sample.mzparquet")`.
+timsTOF, MS1 rows are each frame's raw peaks as measured, not centroided, each with the 1/K0 of its mobility scan
+(about 23 million rows and 100 MB for a one-minute run); MS2 rows carry the precursor's 1/K0 and its isolation
+window. It can be read with any Parquet library, e.g. `polars.read_parquet("sample.mzparquet")`.
 
 **timsTOF:** pass the `.d` folder, e.g. `RawConverter sample.d --ms2`. This is a port of the
 TimsTOF_extractor script (`extract_msn_nopd.py` 0.2.4) and writes the same MS2 output, using Bruker's TDF SDK

@@ -15,9 +15,10 @@ namespace RawConverter.Converter
     /// Converts Bruker timsTOF DDA-PASEF data (a .d folder with analysis.tdf and analysis.tdf_bin) to MS1, MS2,
     /// mzXML and mzParquet files. MS1 and MS2 are a port of the TimsTOF_extractor script (extract_msn_nopd.py,
     /// version 0.2.4); the output matches it, except that MS1 output works (the script opened an empty file name,
-    /// and failed on MS1 frames without peaks). mzXML and mzParquet have the same scan numbers, with MS1 frames
-    /// centroided by the SDK; the precursor's 1/K0 is in each mzXML MS2 scan's filterLine, and in the
-    /// ion_mobility column of mzParquet, whose rt column is in seconds, as dotD2parquet writes it.
+    /// and failed on MS1 frames without peaks). mzXML and mzParquet have the same scan numbers. mzXML MS1 frames
+    /// are summed over ion mobility and centroided by the SDK, and the precursor's 1/K0 is in each MS2 scan's
+    /// filterLine. mzParquet MS1 rows are the frames' raw peaks, each with its 1/K0, MS2 rows carry the
+    /// precursor's 1/K0, and the rt column is in seconds, as dotD2parquet writes it.
     /// </summary>
     internal class TimsTofConverter
     {
@@ -278,10 +279,15 @@ namespace RawConverter.Converter
                 foreach (Frame frame in ms1Frames)
                 {
                     int ms1Scan = ms1ScanNums[frame.Id];
-                    (double[] mz, float[] area) = td.ExtractCentroidedSpectrum(frame.Id, 0, (uint)frame.NumScans);
-                    MassSpectrum ms1 = CreateSpectrum(ms1Scan, 1, frame.Time, mz, area, "TIMSTOF " + frame.Polarity + " MS1");
-                    writer?.WriteScan(ms1);
-                    parquet?.WriteScan(ms1);
+                    if (writer != null)
+                    {
+                        (double[] mz, float[] area) = td.ExtractCentroidedSpectrum(frame.Id, 0, (uint)frame.NumScans);
+                        writer.WriteScan(CreateSpectrum(ms1Scan, 1, frame.Time, mz, area, "TIMSTOF " + frame.Polarity + " MS1"));
+                    }
+                    if (parquet != null)
+                    {
+                        WriteRawMs1(td, frame, ms1Scan, parquet);
+                    }
 
                     if (byParent.TryGetValue(frame.Id, out List<Precursor> children))
                     {
@@ -324,6 +330,34 @@ namespace RawConverter.Converter
                 writer?.Close();
                 parquet?.Close();
             }
+        }
+
+        /// <summary>
+        /// The frame's peaks as measured, in mobility-scan order, each with its scan's 1/K0.
+        /// </summary>
+        private static void WriteRawMs1(TimsData td, Frame frame, int scanNumber, MzParquetWriter parquet)
+        {
+            List<(uint[] Indices, uint[] Intensities)> scans = td.ReadScans(frame.Id, 0, (uint)frame.NumScans);
+            int numPeaks = scans.Sum(s => s.Indices.Length);
+            if (numPeaks == 0)
+            {
+                return;
+            }
+            double[] scanK0 = td.ScanNumToOneOverK0(frame.Id, Enumerable.Range(0, scans.Count).Select(i => (double)i).ToArray());
+            double[] indices = new double[numPeaks];
+            uint[] intensities = new uint[numPeaks];
+            double[] oneOverK0 = new double[numPeaks];
+            int k = 0;
+            for (int scan = 0; scan < scans.Count; scan++)
+            {
+                for (int j = 0; j < scans[scan].Indices.Length; j++, k++)
+                {
+                    indices[k] = scans[scan].Indices[j];
+                    intensities[k] = scans[scan].Intensities[j];
+                    oneOverK0[k] = scanK0[scan];
+                }
+            }
+            parquet.WriteMs1Peaks(scanNumber, frame.Time / 60, td.IndexToMz(frame.Id, indices), intensities, oneOverK0);
         }
 
         private static MassSpectrum CreateSpectrum(int scanNum, int msLevel, double timeInSeconds, double[] mz, float[] area, string filter)

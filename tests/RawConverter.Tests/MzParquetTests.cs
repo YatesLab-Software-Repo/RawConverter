@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 using Parquet;
 using Parquet.Schema;
 using Xunit;
@@ -82,14 +83,20 @@ namespace RawConverter.Tests
                 new ConversionOptions { OutputFormats = OutputFormat.MS2 | OutputFormat.MzParquet, OutputFolder = _dir })[0];
             Assert.True(result.Succeeded, result.Error?.ToString());
 
-            List<Row> rows = (await Read(Path.Combine(_dir, "200ngHeLaPASEF_1min.mzparquet"))).Rows;
+            // the MS1 rows (22.9 million raw peaks) are summarised rather than kept;
+            Ms1Summary ms1 = new Ms1Summary();
+            List<Row> rows = (await Read(Path.Combine(_dir, "200ngHeLaPASEF_1min.mzparquet"), ms1)).Rows;
             Dictionary<int, Ms2Spectrum> ms2 = ReadMs2(Path.Combine(_dir, "200ngHeLaPASEF_1min.ms2"));
 
             // MS1 frames are centroided, without mobility; each MS2 scan follows its MS1 scan;
-            List<Row> ms1Rows = rows.Where(r => r.Level == 1).ToList();
-            Assert.NotEmpty(ms1Rows);
-            Assert.All(ms1Rows, r => Assert.True(r.IonMobility == null && r.PrecursorMz == null && r.IsolationLower == null));
-            HashSet<uint> ms1Scans = ms1Rows.Select(r => r.Scan).ToHashSet();
+            // MS1 rows are the frames' raw peaks, each with the 1/K0 of its mobility scan, which falls with the scan number;
+            Assert.Equal(MS1PeakCounts(dda), ms1.PeakCounts.Values);
+            Assert.Equal(0, ms1.MissingMobility);
+            Assert.Equal(0, ms1.MobilityIncreases);
+            Assert.Equal(0, ms1.WithPrecursor);
+            Assert.InRange(ms1.MinMobility, 0.4f, ms1.MaxMobility);
+            Assert.InRange(ms1.MaxMobility, ms1.MinMobility, 2.0f);
+            HashSet<uint> ms1Scans = ms1.PeakCounts.Keys.ToHashSet();
 
             CompareMs2(rows, ms2, rtScale: 1);
             foreach (IGrouping<uint, Row> scan in rows.Where(r => r.Level == 2).GroupBy(r => r.Scan))
@@ -209,7 +216,35 @@ namespace RawConverter.Tests
             public uint? PrecursorCharge;
         }
 
-        private static async Task<(List<Row> Rows, ParquetSchema Schema)> Read(string file)
+        private static List<long> MS1PeakCounts(string analysisDir)
+        {
+            using SqliteConnection conn = new SqliteConnection("Data Source=" + Path.Combine(analysisDir, "analysis.tdf") + ";Mode=ReadOnly");
+            conn.Open();
+            using SqliteCommand cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT NumPeaks FROM Frames WHERE MsMsType = 0 AND NumPeaks > 0 ORDER BY Id";
+            using SqliteDataReader r = cmd.ExecuteReader();
+            List<long> counts = new List<long>();
+            while (r.Read())
+            {
+                counts.Add(r.GetInt64(0));
+            }
+            return counts;
+        }
+
+        private class Ms1Summary
+        {
+            public Dictionary<uint, long> PeakCounts = new Dictionary<uint, long>();
+            public long MissingMobility;
+            public long MobilityIncreases;
+            public long WithPrecursor;
+            public float MinMobility = float.MaxValue;
+            public float MaxMobility = float.MinValue;
+            public uint LastScan;
+            public float LastMobility;
+        }
+
+        /// <param name="ms1">when given, MS1 rows are summarised in it instead of returned</param>
+        private static async Task<(List<Row> Rows, ParquetSchema Schema)> Read(string file, Ms1Summary ms1 = null)
         {
             List<Row> rows = new List<Row>();
             await using ParquetReader reader = await ParquetReader.CreateAsync(file);
@@ -228,6 +263,30 @@ namespace RawConverter.Tests
                 uint?[] precursorCharge = await NullableColumn<uint>(rg, fields[10], n);
                 for (int i = 0; i < n; i++)
                 {
+                    if (ms1 != null && level[i] == 1)
+                    {
+                        ms1.PeakCounts[scan[i]] = ms1.PeakCounts.GetValueOrDefault(scan[i]) + 1;
+                        if (ionMobility[i] is float k0)
+                        {
+                            ms1.MinMobility = Math.Min(ms1.MinMobility, k0);
+                            ms1.MaxMobility = Math.Max(ms1.MaxMobility, k0);
+                            if (scan[i] == ms1.LastScan && k0 > ms1.LastMobility)
+                            {
+                                ms1.MobilityIncreases++;
+                            }
+                            ms1.LastMobility = k0;
+                        }
+                        else
+                        {
+                            ms1.MissingMobility++;
+                        }
+                        ms1.LastScan = scan[i];
+                        if (precursorScan[i] != null || precursorMz[i] != null || isolationLower[i] != null)
+                        {
+                            ms1.WithPrecursor++;
+                        }
+                        continue;
+                    }
                     rows.Add(new Row
                     {
                         Scan = scan[i], Level = level[i], Rt = rt[i], Mz = mz[i], Intensity = intensity[i], IonMobility = ionMobility[i],

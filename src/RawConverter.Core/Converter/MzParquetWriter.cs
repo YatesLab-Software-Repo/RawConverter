@@ -110,6 +110,32 @@ namespace RawConverter.Converter
             }
         }
 
+        /// <summary>
+        /// Uncentroided MS1 peaks, each with its own ion mobility (timsTOF frames).
+        /// </summary>
+        public void WriteMs1Peaks(int scanNumber, double retentionTime, double[] mz, uint[] intensity, double[] ionMobility)
+        {
+            float rt = (float)(retentionTime * _rtScale);
+            for (int i = 0; i < mz.Length; i++)
+            {
+                _scan[_rows] = (uint)scanNumber;
+                _level[_rows] = 1;
+                _rt[_rows] = rt;
+                _mz[_rows] = (float)mz[i];
+                _intensity[_rows] = intensity[i];
+                _ionMobility[_rows] = (float)ionMobility[i];
+                _isolationLower[_rows] = null;
+                _isolationUpper[_rows] = null;
+                _precursorScan[_rows] = null;
+                _precursorMz[_rows] = null;
+                _precursorCharge[_rows] = null;
+                if (++_rows == RowGroupSize)
+                {
+                    Flush();
+                }
+            }
+        }
+
         private static uint ToUInt32(double intensity)
         {
             double rounded = Math.Round(intensity);
