@@ -2,16 +2,17 @@
 # Build the Windows installer (out/RawConverter-<version>-win-x64-setup.exe) on Linux, using Inno Setup in Docker.
 # Publishes the Windows build first, and downloads Microsoft's Visual C++ runtime installer into
 # packaging/windows/cache (not committed).
+# The version comes from Directory.Build.props unless VERSION is set (the release workflow sets it from the tag).
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props)
+version=${VERSION:-$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props)}
 out=out/RawConverter-win-x64
 cache=packaging/windows/cache
 
 rm -rf "$out"
 for project in src/RawConverter.Cli/RawConverter.Cli.csproj src/RawConverter.Gui/RawConverter.Gui.csproj; do
-    dotnet publish "$project" -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o "$out"
+    dotnet publish "$project" -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version="$version" -o "$out"
 done
 
 mkdir -p "$cache"
