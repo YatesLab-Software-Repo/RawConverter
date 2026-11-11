@@ -14,7 +14,7 @@ with .NET 10, using Thermo's RawFileReader library (no Wine or MSFileReader need
 | `src/RawConverter.Gui` | Desktop GUI (`RawConverterGUI`, Avalonia), a copy of the legacy WinForms window |
 | `tests/RawConverter.Tests` | Unit tests and data-driven regression tests (see `tests/README.md`) |
 | `ThermoPkg` | Thermo RawFileReader NuGet packages (not on nuget.org; see `Licenses/Thermo`) |
-| `Licenses` | License terms for the Thermo and Bruker components |
+| `Licenses` | License terms for the Thermo, Bruker and Parquet.Net components |
 | `src/RawConverter.Core/native` | Native libraries: lpsolve, and Bruker's TDF SDK (`timsdata`) for timsTOF input |
 | `packaging/singularity` | Container definition for hosts too old for .NET 10, such as CentOS 7 |
 | `RawConverter` | Legacy .NET Framework 4 / WinForms version, kept as the reference for the GUI port |

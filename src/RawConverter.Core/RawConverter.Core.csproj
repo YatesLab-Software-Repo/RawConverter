@@ -26,6 +26,8 @@
     <None Include="native/libtimsdata.so" Link="libtimsdata.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- Bruker's redist.txt requires this file to accompany the libraries. -->
     <None Include="../../Licenses/Bruker/THIRD-PARTY-LICENSE-README.txt" Link="Licenses/Bruker/THIRD-PARTY-LICENSE-README.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- MIT and BSD licenses of Parquet.Net and its dependencies, which ship inside the executables. -->
+    <None Include="../../Licenses/ParquetNet/*.txt" Link="Licenses/ParquetNet/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Include="AveragineTable.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
