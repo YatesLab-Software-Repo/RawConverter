@@ -27,12 +27,14 @@ namespace RawConverter.Gui.Views
 
         private readonly MainWindowViewModel _vm;
         private readonly List<Action> _menuSync = new List<Action>();
+        private readonly GuiSettings _settings = GuiSettings.Load();
 
         public MainWindow()
         {
             InitializeComponent();
             _vm = new MainWindowViewModel(this);
             DataContext = _vm;
+            _vm.CheckForUpdatesAtStartup = _settings.CheckForUpdatesAtStartup;
 
             BuildOptionsMenu();
             _vm.PropertyChanged += (sender, e) => SyncMenus();
@@ -49,6 +51,8 @@ namespace RawConverter.Gui.Views
 
             InputList.AddHandler(DragDrop.DragOverEvent, OnDragOver);
             InputList.AddHandler(DragDrop.DropEvent, OnDrop);
+
+            Opened += async (sender, e) => await _vm.CheckForUpdatesAtStartupIfEnabled();
         }
 
         internal MainWindowViewModel ViewModel => _vm;
@@ -75,6 +79,12 @@ namespace RawConverter.Gui.Views
             AddToggle(ShowPeakResolutionMenu, () => _vm.ShowPeakResolution, v => _vm.ShowPeakResolution = v);
             AddToggle(ExportChargeStateMenu, () => _vm.ExportChargeState, v => _vm.ExportChargeState = v);
             AddToggle(BypassThermoMenu, () => _vm.BypassThermoAlgorithm, v => _vm.BypassThermoAlgorithm = v);
+            AddToggle(CheckUpdatesAtStartupMenu, () => _vm.CheckForUpdatesAtStartup, v =>
+            {
+                _vm.CheckForUpdatesAtStartup = v;
+                _settings.CheckForUpdatesAtStartup = v;
+                _settings.Save();
+            });
             SyncMenus();
         }
 
@@ -207,6 +217,16 @@ namespace RawConverter.Gui.Views
             new AboutWindow().ShowDialog(this);
         }
 
+        private async void OnCheckForUpdates(object sender, RoutedEventArgs e)
+        {
+            await _vm.CheckForUpdates(true);
+        }
+
+        private async void OnOpenUpdatePage(object sender, RoutedEventArgs e)
+        {
+            await _vm.OpenUpdatePage();
+        }
+
         private void OnDdaSingleSpectrum(object sender, RoutedEventArgs e)
         {
             new SingleSpectrumWindow(SingleSpectrumWindow.Mode.Dda).Show();
@@ -225,6 +245,14 @@ namespace RawConverter.Gui.Views
         public Task<bool> Confirm(string text, string title)
         {
             return MessageBoxWindow.Show(this, text, title, true);
+        }
+
+        public async Task OpenUrl(string url)
+        {
+            if (!await Launcher.LaunchUriAsync(new Uri(url)))
+            {
+                await ShowMessage("Could not open a web browser. The page is:\n" + url, "RawConverter");
+            }
         }
     }
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,6 +19,7 @@ namespace RawConverter.Gui.ViewModels
     {
         Task ShowMessage(string text, string title);
         Task<bool> Confirm(string text, string title);
+        Task OpenUrl(string url);
     }
 
     /// <summary>
@@ -497,6 +500,77 @@ namespace RawConverter.Gui.ViewModels
         /// <summary>
         /// Called from the conversion threads; the window marshals it to the UI thread.
         /// </summary>
+        /// <summary>
+        /// Looks up a newer release; replaceable in tests.
+        /// </summary>
+        public Func<CancellationToken, Task<ReleaseInfo>> UpdateSource { get; set; } = UpdateChecker.CheckForUpdateAsync;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsUpdateAvailable), nameof(UpdateMenuText))]
+        private ReleaseInfo _availableUpdate;
+
+        /// <summary>Help > Check for Updates at Startup (saved by the window).</summary>
+        [ObservableProperty] private bool _checkForUpdatesAtStartup = true;
+
+        public bool IsUpdateAvailable => AvailableUpdate != null;
+        public string UpdateMenuText => AvailableUpdate == null ? "" : "Update available: " + AvailableUpdate.Version;
+
+        /// <summary>
+        /// The check at startup, unless it is turned off in the Help menu or by RAWCONVERTER_NO_UPDATE_CHECK.
+        /// </summary>
+        public Task CheckForUpdatesAtStartupIfEnabled()
+        {
+            return CheckForUpdatesAtStartup && !UpdateChecker.AutomaticCheckDisabled ? CheckForUpdates(false) : Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Look up the latest release. A newer one is shown in the menu bar and the log; an explicit check
+        /// (Help > Check for Updates) also reports the result, or why the check failed, in a message box.
+        /// The check at startup stays silent when offline.
+        /// </summary>
+        public async Task CheckForUpdates(bool userInitiated)
+        {
+            const string title = "Check for Updates";
+            ReleaseInfo update;
+            try
+            {
+                update = await UpdateSource(CancellationToken.None);
+            }
+            catch (Exception e) when (e is HttpRequestException || e is TaskCanceledException || e is JsonException)
+            {
+                if (userInitiated)
+                {
+                    await _dialogs.ShowMessage("Could not check for updates: " + e.Message
+                        + "\n\nReleases are published at " + UpdateChecker.ReleasesPage, title);
+                }
+                return;
+            }
+
+            AvailableUpdate = update;
+            if (update == null)
+            {
+                if (userInitiated)
+                {
+                    await _dialogs.ShowMessage("RawConverter " + ConversionRunner.Version + " is the latest version.", title);
+                }
+                return;
+            }
+            AddLogLine("RawConverter " + update.Version + " is available: " + update.Url);
+            if (userInitiated && await _dialogs.Confirm("RawConverter " + update.Version + " is available (this is "
+                + ConversionRunner.Version + ").\n\nOpen the download page?", title))
+            {
+                await _dialogs.OpenUrl(update.Url);
+            }
+        }
+
+        /// <summary>
+        /// The "Update available" menu item: open the release page.
+        /// </summary>
+        public Task OpenUpdatePage()
+        {
+            return _dialogs.OpenUrl(AvailableUpdate?.Url ?? UpdateChecker.ReleasesPage);
+        }
+
         public void AddLogLine(string line)
         {
             LogLines.Add(line);
