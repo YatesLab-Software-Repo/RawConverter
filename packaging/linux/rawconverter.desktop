@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RawConverter
+Comment=Convert mass spectrometry data files (Thermo .raw, Bruker timsTOF .d, mzML, mzXML)
+Exec=rawconverter-gui
+Icon=rawconverter
+Terminal=false
+Categories=Science;Chemistry;Education;

@@ -1,0 +1,68 @@
+# nFPM configuration for the Linux packages (.deb, .rpm, Arch .pkg.tar.zst); build them with
+# packaging/linux/build-packages.sh, which stages the published build in out/linux-stage and sets VERSION.
+name: rawconverter
+arch: amd64
+platform: linux
+version: ${VERSION}
+version_schema: semver
+section: science
+priority: optional
+maintainer: Yates Lab, The Scripps Research Institute <noreply@github.com>
+vendor: Yates Lab, The Scripps Research Institute
+homepage: https://github.com/YatesLab-Software-Repo/RawConverter
+license: See /opt/rawconverter/LICENSE and /opt/rawconverter/Licenses
+description: |
+  Converts mass spectrometry data files (Thermo .raw, Bruker timsTOF .d, mzML, mzXML)
+  to MS1, MS2, MGF, mzXML, mzML and mzParquet.
+  Provides the rawconverter command-line tool and the rawconverter-gui desktop application.
+
+contents:
+  - src: out/linux-stage/
+    dst: /opt/rawconverter
+    type: tree
+  - src: /opt/rawconverter/RawConverter
+    dst: /usr/bin/rawconverter
+    type: symlink
+  - src: /opt/rawconverter/RawConverterGUI
+    dst: /usr/bin/rawconverter-gui
+    type: symlink
+  - src: packaging/linux/rawconverter.desktop
+    dst: /usr/share/applications/rawconverter.desktop
+  - src: packaging/linux/rawconverter.png
+    dst: /usr/share/icons/hicolor/256x256/apps/rawconverter.png
+
+# .NET needs ICU; SkiaSharp (GUI) links libfontconfig. The GUI loads the X11 libraries at run time, so they are
+# only recommended: the command-line tool runs without them on headless servers.
+overrides:
+  deb:
+    depends:
+      - libicu78 | libicu77 | libicu76 | libicu75 | libicu74 | libicu72 | libicu71 | libicu70 | libicu67 | libicu66 | libicu63
+      - libfontconfig1
+    recommends:
+      - libx11-6
+      - libice6
+      - libsm6
+      - libxrandr2
+      - libxi6
+      - libxcursor1
+  rpm:
+    depends:
+      - libicu
+      - libfontconfig.so.1()(64bit)
+    recommends:
+      - libX11.so.6()(64bit)
+      - libICE.so.6()(64bit)
+      - libSM.so.6()(64bit)
+      - libXrandr.so.2()(64bit)
+      - libXi.so.6()(64bit)
+      - libXcursor.so.1()(64bit)
+  archlinux:
+    depends:
+      - icu
+      - fontconfig
+    # pacman has no Recommends; the X11 libraries are present on any desktop install.
+
+rpm:
+  compression: zstd
+deb:
+  compression: zstd

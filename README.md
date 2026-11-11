@@ -33,6 +33,20 @@ dotnet test RawConverter.sln
 on Linux with Inno Setup in Docker (`amake/innosetup`). It installs the GUI and the CLI (optionally on PATH), the
 license files, and the Microsoft Visual C++ runtime that Bruker's `timsdata.dll` needs, if it is missing.
 
+`packaging/linux/build-packages.sh` builds the Linux packages with nFPM in Docker (`goreleaser/nfpm`): a `.deb`
+(Debian, Ubuntu), an `.rpm` (Fedora, RHEL, Rocky, Alma) and an Arch package, plus a portable `.tar.gz` for other
+distributions. The packages install into `/opt/rawconverter`, put `rawconverter` and `rawconverter-gui` on PATH and add
+a desktop entry. They require ICU and fontconfig; the X11 libraries the GUI needs are only recommended, so the
+command-line tool can be installed on headless servers.
+
+Both scripts take the version from `Directory.Build.props`, or from `VERSION` if it is set.
+
+### Releases
+
+Pushing a version tag (`git tag 1.2.1 && git push origin 1.2.1`) runs `.github/workflows/release.yml`: it runs the
+tests, builds the Windows installer and the Linux packages, and publishes them with checksums as a GitHub Release.
+Running the workflow by hand from the Actions tab builds the same files as workflow artifacts without releasing.
+
 ## GUI
 
 `RawConverterGUI` reproduces the legacy WinForms window and menus on Windows and Linux. Besides the legacy
