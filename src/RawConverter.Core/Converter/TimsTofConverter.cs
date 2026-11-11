@@ -12,11 +12,12 @@ using RawConverter.MassSpec;
 namespace RawConverter.Converter
 {
     /// <summary>
-    /// Converts Bruker timsTOF DDA-PASEF data (a .d folder with analysis.tdf and analysis.tdf_bin) to MS1, MS2
-    /// and mzXML files. MS1 and MS2 are a port of the TimsTOF_extractor script (extract_msn_nopd.py, version
-    /// 0.2.4); the output matches it, except that MS1 output works (the script opened an empty file name, and
-    /// failed on MS1 frames without peaks). mzXML has the same scan numbers, with MS1 frames centroided by the
-    /// SDK and the precursor's 1/K0 in each MS2 scan's filterLine.
+    /// Converts Bruker timsTOF DDA-PASEF data (a .d folder with analysis.tdf and analysis.tdf_bin) to MS1, MS2,
+    /// mzXML and mzParquet files. MS1 and MS2 are a port of the TimsTOF_extractor script (extract_msn_nopd.py,
+    /// version 0.2.4); the output matches it, except that MS1 output works (the script opened an empty file name,
+    /// and failed on MS1 frames without peaks). mzXML and mzParquet have the same scan numbers, with MS1 frames
+    /// centroided by the SDK; the precursor's 1/K0 is in each mzXML MS2 scan's filterLine, and in the
+    /// ion_mobility column of mzParquet, whose rt column is in seconds, as dotD2parquet writes it.
     /// </summary>
     internal class TimsTofConverter
     {
@@ -30,6 +31,7 @@ namespace RawConverter.Converter
         private readonly string _ms1File;
         private readonly string _ms2File;
         private readonly string _mzXmlFile;
+        private readonly string _mzParquetFile;
         private int _progressStart;
 
         public static bool IsTimsTofDirectory(string path)
@@ -40,7 +42,8 @@ namespace RawConverter.Converter
         }
 
         /// <param name="outFolder">null writes the output inside the .d folder, as the script did.</param>
-        public TimsTofConverter(string analysisDir, string outFolder, bool writeMs1, bool writeMs2, bool writeMzXml = false)
+        public TimsTofConverter(string analysisDir, string outFolder, bool writeMs1, bool writeMs2, bool writeMzXml = false,
+            bool writeMzParquet = false)
         {
             _analysisDir = Path.GetFullPath(analysisDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             _tdfFile = Directory.GetFiles(_analysisDir, "*.tdf")[0];
@@ -51,6 +54,7 @@ namespace RawConverter.Converter
             _ms1File = writeMs1 ? Path.Combine(folder, name + ".ms1") : null;
             _ms2File = writeMs2 ? Path.Combine(folder, name + ".ms2") : null;
             _mzXmlFile = writeMzXml ? Path.Combine(folder, name + ".mzXML") : null;
+            _mzParquetFile = writeMzParquet ? Path.Combine(folder, name + ".mzparquet") : null;
         }
 
         /// <param name="progressStart">progress percentage to start from (when extraction came first)</param>
@@ -73,6 +77,7 @@ namespace RawConverter.Converter
 
             List<Frame> allFrames = ReadFrames(conn);
             List<Precursor> precursors = ReadPrecursors(conn);
+            ReadIsolationWindows(conn, precursors);
             Dictionary<string, string> metadata = ReadGlobalMetadata(conn);
             conn.Close();
 
@@ -82,7 +87,7 @@ namespace RawConverter.Converter
             using TimsData td = new TimsData(_analysisDir);
             List<Precursor> written = precursors.Where(p => p.MonoisotopicMz.HasValue && p.Charge.HasValue && p.Charge > 1).ToList();
             int total = (_ms2File != null ? written.Count : 0) + (_ms1File != null ? ms1Frames.Count : 0)
-                + (_mzXmlFile != null ? ms1Frames.Count : 0);
+                + (_mzXmlFile != null || _mzParquetFile != null ? ms1Frames.Count : 0);
             int done = 0;
 
             if (_ms2File != null)
@@ -95,10 +100,17 @@ namespace RawConverter.Converter
                 Log.Info(" Output file: " + _ms1File);
                 WriteMs1(td, ms1Frames, ms1ScanNums, progress, ref done, total);
             }
-            if (_mzXmlFile != null && !progress.Aborted)
+            if ((_mzXmlFile != null || _mzParquetFile != null) && !progress.Aborted)
             {
-                Log.Info(" Output file: " + _mzXmlFile);
-                WriteMzXml(td, ms1Frames, written, ms1ScanNums, ms2ScanNums, metadata, progress, ref done, total);
+                if (_mzXmlFile != null)
+                {
+                    Log.Info(" Output file: " + _mzXmlFile);
+                }
+                if (_mzParquetFile != null)
+                {
+                    Log.Info(" Output file: " + _mzParquetFile);
+                }
+                WriteSpectra(td, ms1Frames, written, ms1ScanNums, ms2ScanNums, metadata, progress, ref done, total);
             }
         }
 
@@ -234,10 +246,11 @@ namespace RawConverter.Converter
         }
 
         /// <summary>
-        /// One pass over the MS1 frames, each followed by the MS2 scans of its precursors, in scan-number order.
-        /// Precursors without peaks are written as empty scans, so that scanCount is known up front.
+        /// One pass over the MS1 frames, each followed by the MS2 scans of its precursors, in scan-number order,
+        /// into the mzXML and/or mzParquet file. Precursors without peaks are written as empty mzXML scans, so
+        /// that scanCount is known up front.
         /// </summary>
-        private void WriteMzXml(TimsData td, List<Frame> ms1Frames, List<Precursor> written, Dictionary<long, int> ms1ScanNums,
+        private void WriteSpectra(TimsData td, List<Frame> ms1Frames, List<Precursor> written, Dictionary<long, int> ms1ScanNums,
             Dictionary<long, Dictionary<long, int>> ms2ScanNums, Dictionary<string, string> metadata, TaskProgress progress,
             ref int done, int total)
         {
@@ -245,19 +258,30 @@ namespace RawConverter.Converter
             string Meta(string key) => metadata.TryGetValue(key, out string value) && !string.IsNullOrEmpty(value) ? value : "unknown";
             string model = Meta("InstrumentName");
 
-            MzXMLFileWriter writer = new MzXMLFileWriter(_mzXmlFile);
+            MzXMLFileWriter writer = null;
+            MzParquetWriter parquet = null;
             try
             {
-                // the parent file is analysis.tdf, which identifies the run, rather than the much larger .tdf_bin;
-                writer.WriteHeader(ms1Frames.Count + written.Count, ms1Frames.Count > 0 ? ms1Frames[0].Time : 0,
-                    ms1Frames.Count > 0 ? ms1Frames[ms1Frames.Count - 1].Time : 0, _tdfFile, "Bruker Daltonics", model,
-                    "nanoelectrospray", model, model, "acquisition", Meta("AcquisitionSoftware"), Meta("AcquisitionSoftwareVersion"), ConversionRunner.Version);
+                if (_mzXmlFile != null)
+                {
+                    writer = new MzXMLFileWriter(_mzXmlFile);
+                    // the parent file is analysis.tdf, which identifies the run, rather than the much larger .tdf_bin;
+                    writer.WriteHeader(ms1Frames.Count + written.Count, ms1Frames.Count > 0 ? ms1Frames[0].Time : 0,
+                        ms1Frames.Count > 0 ? ms1Frames[ms1Frames.Count - 1].Time : 0, _tdfFile, "Bruker Daltonics", model,
+                        "nanoelectrospray", model, model, "acquisition", Meta("AcquisitionSoftware"), Meta("AcquisitionSoftwareVersion"), ConversionRunner.Version);
+                }
+                if (_mzParquetFile != null)
+                {
+                    parquet = new MzParquetWriter(_mzParquetFile, 60);
+                }
 
                 foreach (Frame frame in ms1Frames)
                 {
                     int ms1Scan = ms1ScanNums[frame.Id];
                     (double[] mz, float[] area) = td.ExtractCentroidedSpectrum(frame.Id, 0, (uint)frame.NumScans);
-                    writer.WriteScan(CreateSpectrum(ms1Scan, 1, frame.Time, mz, area, "TIMSTOF " + frame.Polarity + " MS1"));
+                    MassSpectrum ms1 = CreateSpectrum(ms1Scan, 1, frame.Time, mz, area, "TIMSTOF " + frame.Polarity + " MS1");
+                    writer?.WriteScan(ms1);
+                    parquet?.WriteScan(ms1);
 
                     if (byParent.TryGetValue(frame.Id, out List<Precursor> children))
                     {
@@ -275,7 +299,14 @@ namespace RawConverter.Converter
                             spec.PrecursorScanNumber = ms1Scan;
                             spec.PrecursorIntensity = p.Intensity ?? 0;
                             spec.Precursors = new List<Tuple<double, int>> { Tuple.Create(p.MonoisotopicMz.Value, (int)p.Charge.Value) };
-                            writer.WriteScan(spec);
+                            spec.IonMobility = k0;
+                            if (p.IsolationMz.HasValue)
+                            {
+                                spec.IsolationLowerMz = p.IsolationMz - p.IsolationWidth / 2;
+                                spec.IsolationUpperMz = p.IsolationMz + p.IsolationWidth / 2;
+                            }
+                            writer?.WriteScan(spec);
+                            parquet?.WriteScan(spec);
                         }
                     }
 
@@ -285,12 +316,13 @@ namespace RawConverter.Converter
                         return;
                     }
                 }
-                writer.WriteIndex();
-                writer.WriteEnd();
+                writer?.WriteIndex();
+                writer?.WriteEnd();
             }
             finally
             {
-                writer.Close();
+                writer?.Close();
+                parquet?.Close();
             }
         }
 
@@ -423,6 +455,25 @@ namespace RawConverter.Converter
             return precursors;
         }
 
+        /// <summary>
+        /// The isolation window of each precursor; its PASEF frames all use the same one.
+        /// </summary>
+        private static void ReadIsolationWindows(SqliteConnection conn, List<Precursor> precursors)
+        {
+            Dictionary<long, Precursor> byId = precursors.ToDictionary(p => p.Id);
+            using SqliteCommand cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT Precursor, IsolationMz, IsolationWidth FROM PasefFrameMsMsInfo GROUP BY Precursor";
+            using SqliteDataReader r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                if (!r.IsDBNull(0) && byId.TryGetValue(r.GetInt64(0), out Precursor p))
+                {
+                    p.IsolationMz = r.GetDouble(1);
+                    p.IsolationWidth = r.GetDouble(2);
+                }
+            }
+        }
+
         private static Dictionary<string, string> ReadGlobalMetadata(SqliteConnection conn)
         {
             Dictionary<string, string> metadata = new Dictionary<string, string>();
@@ -464,6 +515,8 @@ namespace RawConverter.Converter
             public double ScanNumber;
             public double? Intensity;
             public long Parent;
+            public double? IsolationMz;
+            public double IsolationWidth;
         }
     }
 }

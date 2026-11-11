@@ -26,7 +26,7 @@ namespace RawConverter.Gui.ViewModels
     {
         public const string Ms123Format = "MS1, MS2, and MS3";
 
-        public static readonly string[] OutputFormatChoices = { Ms123Format, "MGF", "mzXML", "mzML", "All" };
+        public static readonly string[] OutputFormatChoices = { Ms123Format, "MGF", "mzXML", "mzML", "mzParquet", "All" };
 
         private readonly IDialogService _dialogs;
         private CancellationTokenSource _cancellation;
@@ -76,6 +76,8 @@ namespace RawConverter.Gui.ViewModels
         [ObservableProperty] private bool _mzXmlEnabled;
         [ObservableProperty] private bool _mzMlChecked;
         [ObservableProperty] private bool _mzMlEnabled;
+        [ObservableProperty] private bool _mzParquetChecked;
+        [ObservableProperty] private bool _mzParquetEnabled;
         [ObservableProperty] private bool _logChecked;
         [ObservableProperty] private bool _logEnabled;
 
@@ -231,7 +233,7 @@ namespace RawConverter.Gui.ViewModels
         private string ApplyOutputFormat(int index)
         {
             const string same = "The input and the output formats cannot be the same!";
-            const string timsTof = "timsTOF input can only be converted to MS2 and mzXML!";
+            const string timsTof = "timsTOF input can only be converted to MS2, mzXML and mzParquet!";
             switch (index)
             {
                 case 0: // MS1, MS2, and MS3;
@@ -282,13 +284,22 @@ namespace RawConverter.Gui.ViewModels
                     SetOutputChoices(false, false, false, false, false, false, true);
                     SetOutputChecks(false, false, false, false, mzXml, !mzXml, false);
                     return null;
-                case 4: // All;
+                case 4: // mzParquet;
+                    if (IsFormat(".MGF"))
+                    {
+                        DisableOutputs();
+                        return "MGF input cannot be converted to mzParquet!";
+                    }
+                    SetOutputChoices(false, false, false, false, false, false, true);
+                    SetOutputChecks(false, false, false, false, false, false, false, true);
+                    return null;
+                case 5: // All;
                     if (CurrentInputFormat != null && !IsFormat(".RAW"))
                     {
                         DisableOutputs();
                         return IsTimsTofInput ? timsTof : "This option is only availabe for RAW data extraction!";
                     }
-                    SetOutputChoices(true, true, true, true, true, true, true);
+                    SetOutputChoices(true, true, true, true, true, true, true, true);
                     SetOutputChecks(false, true, false, false, false, false, false);
                     return null;
                 default:
@@ -302,8 +313,9 @@ namespace RawConverter.Gui.ViewModels
             SetOutputChecks(false, false, false, false, false, false, false);
         }
 
-        private void SetOutputChoices(bool ms1, bool ms2, bool ms3, bool mgf, bool mzXml, bool mzMl, bool log)
+        private void SetOutputChoices(bool ms1, bool ms2, bool ms3, bool mgf, bool mzXml, bool mzMl, bool log, bool mzParquet = false)
         {
+            MzParquetEnabled = mzParquet;
             Ms1Enabled = ms1;
             Ms2Enabled = ms2;
             Ms3Enabled = ms3;
@@ -313,8 +325,9 @@ namespace RawConverter.Gui.ViewModels
             LogEnabled = log;
         }
 
-        private void SetOutputChecks(bool ms1, bool ms2, bool ms3, bool mgf, bool mzXml, bool mzMl, bool log)
+        private void SetOutputChecks(bool ms1, bool ms2, bool ms3, bool mgf, bool mzXml, bool mzMl, bool log, bool mzParquet = false)
         {
+            MzParquetChecked = mzParquet;
             Ms1Checked = ms1;
             Ms2Checked = ms2;
             Ms3Checked = ms3;
@@ -351,7 +364,7 @@ namespace RawConverter.Gui.ViewModels
             {
                 return (null, "Threads count only in Numbers!");
             }
-            if (!Ms1Checked && !Ms2Checked && !Ms3Checked && !MgfChecked && !MzXmlChecked && !MzMlChecked && !LogChecked)
+            if (!Ms1Checked && !Ms2Checked && !Ms3Checked && !MgfChecked && !MzXmlChecked && !MzMlChecked && !MzParquetChecked && !LogChecked)
             {
                 return (null, "Please select an output format!");
             }
@@ -378,6 +391,7 @@ namespace RawConverter.Gui.ViewModels
             if (Ms3Checked) formats |= OutputFormat.MS3;
             if (MgfChecked) formats |= OutputFormat.MGF;
             if (MzXmlChecked) formats |= OutputFormat.MzXML;
+            if (MzParquetChecked) formats |= OutputFormat.MzParquet;
             if (formats == OutputFormat.None)
             {
                 return (null, "Please select an output format!");

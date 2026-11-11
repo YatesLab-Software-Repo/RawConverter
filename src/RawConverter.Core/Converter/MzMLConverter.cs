@@ -20,6 +20,7 @@ namespace RawConverter.Converter
         private StreamWriter _ms2Writer = null;
         private bool _isFirstMS2Scan = true;
         private StreamWriter _ms3Writer = null;
+        private MzParquetWriter _mzParquetWriter = null;
         private bool _isFirstMS3Scan = true;
 
         private string _mzmlFileName = null;
@@ -70,6 +71,10 @@ namespace RawConverter.Converter
                 if (outFileType.Equals("ms3", StringComparison.InvariantCultureIgnoreCase))
                 {
                     _ms3Writer = new StreamWriter(outFileWithoutExtentionName + outFileType);
+                }
+                if (outFileType.Equals("mzparquet", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    _mzParquetWriter = new MzParquetWriter(outFileWithoutExtentionName + outFileType);
                 }
             }
         }
@@ -184,8 +189,12 @@ namespace RawConverter.Converter
                         switch (cvParm.name)
                         {
                             case "scan start time":
-                                //get retention Time
+                                //get retention Time, in minutes;
                                 retentionTime = System.Convert.ToDouble(cvParm.value.Replace("\"", ""));
+                                if (cvParm.unitName == "second")
+                                {
+                                    retentionTime /= 60;
+                                }
                                 break;
                             case "filter string":
                                 //get filter
@@ -228,6 +237,28 @@ namespace RawConverter.Converter
                             }
                         }
                         spec.Precursors.Add(new Tuple<double, int>(precursorMz, precursorCharge));
+
+                        // isolation window: target m/z with lower and upper offsets;
+                        CVParamType[] isolation = mzML.run.spectrumList.spectrum[i].precursorList.precursor[0].isolationWindow?.cvParam;
+                        if (isolation != null)
+                        {
+                            double? target = null, lower = null, upper = null;
+                            foreach (var cvParm in isolation)
+                            {
+                                double value = System.Convert.ToDouble(cvParm.value.Replace("\"", ""));
+                                switch (cvParm.name)
+                                {
+                                    case "isolation window target m/z": target = value; break;
+                                    case "isolation window lower offset": lower = value; break;
+                                    case "isolation window upper offset": upper = value; break;
+                                }
+                            }
+                            if (target.HasValue && lower.HasValue && upper.HasValue)
+                            {
+                                spec.IsolationLowerMz = target - lower;
+                                spec.IsolationUpperMz = target + upper;
+                            }
+                        }
                     }
 
 
@@ -425,6 +456,12 @@ namespace RawConverter.Converter
             {
                 TextFileWriter.WriteToMGF(_mgfWriter, spec, _mzmlFileName, _mzDecimalPlace, _intensityDecimalPlace, false, false);
             }
+
+            // mzParquet file;
+            if (_mzParquetWriter != null)
+            {
+                _mzParquetWriter.WriteScan(spec);
+            }
         }
 
         public void Close()
@@ -444,6 +481,10 @@ namespace RawConverter.Converter
             if (_ms3Writer != null)
             {
                 _ms3Writer.Close();
+            }
+            if (_mzParquetWriter != null)
+            {
+                _mzParquetWriter.Close();
             }
         }
     }

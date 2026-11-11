@@ -80,15 +80,15 @@ namespace RawConverter.Tests
 
         [Theory]
         [InlineData("x.raw", 0, true, true, true, false, false, null)]
-        [InlineData("x.raw", 4, true, true, true, true, true, null)]
+        [InlineData("x.raw", 5, true, true, true, true, true, null)]
         [InlineData("x.mzXML", 0, false, true, true, false, false, null)]
         [InlineData("x.ms2", 0, false, false, false, false, false, "The input and the output formats cannot be the same!")]
         [InlineData("x.ms2", 1, false, false, false, false, false, null)]
         [InlineData("x.mgf", 2, false, false, false, false, false, "The input can only be RAW files if mzXML is selected")]
         [InlineData("x.d.tar", 0, false, true, false, false, false, null)]
-        [InlineData("x.d.tar", 1, false, false, false, false, false, "timsTOF input can only be converted to MS2 and mzXML!")]
+        [InlineData("x.d.tar", 1, false, false, false, false, false, "timsTOF input can only be converted to MS2, mzXML and mzParquet!")]
         [InlineData("x.d.tar", 2, false, false, false, false, false, null)]
-        [InlineData("x.d.tar", 3, false, false, false, false, false, "timsTOF input can only be converted to MS2 and mzXML!")]
+        [InlineData("x.d.tar", 3, false, false, false, false, false, "timsTOF input can only be converted to MS2, mzXML and mzParquet!")]
         public async Task OutputChoicesFollowTheLegacyRules(string input, int formatIndex,
             bool ms1, bool ms2, bool ms3, bool mgf, bool mzXml, string warning)
         {
@@ -99,6 +99,27 @@ namespace RawConverter.Tests
             Assert.Equal(new[] { ms1, ms2, ms3, mgf, mzXml },
                 new[] { _vm.Ms1Enabled, _vm.Ms2Enabled, _vm.Ms3Enabled, _vm.MgfEnabled, _vm.MzXmlEnabled });
             Assert.Equal(warning, _dialogs.Messages.SingleOrDefault());
+        }
+
+        [Theory]
+        [InlineData("x.raw", true, null)]
+        [InlineData("x.mzML", true, null)]
+        [InlineData("x.ms2", true, null)]
+        [InlineData("x.d.tar", true, null)]
+        [InlineData("x.mgf", false, "MGF input cannot be converted to mzParquet!")]
+        public async Task MzParquetIsCheckedForSupportedInputs(string input, bool isChecked, string warning)
+        {
+            await _vm.AddInputs(new[] { Path.Combine(_dir, input) });
+
+            _vm.OutputFormatIndex = 4;
+
+            Assert.Equal(isChecked, _vm.MzParquetChecked);
+            Assert.False(_vm.Ms2Checked || _vm.MzXmlChecked);
+            Assert.Equal(warning, _dialogs.Messages.SingleOrDefault());
+            if (isChecked)
+            {
+                Assert.Equal(OutputFormat.MzParquet, _vm.BuildOptions().Options.OutputFormats);
+            }
         }
 
         [Fact]
@@ -156,7 +177,7 @@ namespace RawConverter.Tests
             await _vm.AddInputs(new[] { "/data/a.raw" });
             _vm.IsDia = true;
             _vm.PredictDiaChecked = true;
-            _vm.OutputFormatIndex = 4;
+            _vm.OutputFormatIndex = 5;
             _vm.Ms1Checked = true;
             _vm.MgfChecked = true;
             _vm.MzDecimalPlace = 2;

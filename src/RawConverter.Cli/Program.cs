@@ -70,6 +70,9 @@ namespace RawConverter.Cli
                     case "mzxml":
                         cl.Options.OutputFormats |= OutputFormat.MzXML;
                         break;
+                    case "mzparquet":
+                        cl.Options.OutputFormats |= OutputFormat.MzParquet;
+                        break;
                     case "log":
                         // accepted for compatibility; the log file was never implemented;
                         break;
@@ -122,7 +125,7 @@ namespace RawConverter.Cli
                 }
                 else if (cl.Options.OutputFormats == OutputFormat.None)
                 {
-                    cl.Error = "No output format given (--ms1, --ms2, --ms3, --mgf or --mzxml).";
+                    cl.Error = "No output format given (--ms1, --ms2, --ms3, --mgf, --mzxml or --mzparquet).";
                 }
             }
             return cl;
@@ -222,8 +225,8 @@ namespace RawConverter.Cli
             Console.WriteLine("RawConverter " + ConversionRunner.Version);
             Console.WriteLine("Usage:");
             Console.WriteLine("\tRawConverter <input_file> [<input_file> ...] [options]");
-            Console.WriteLine("\tInput files: .raw, .mzXML, .mzML, .ms2 (to MGF), .mgf (to MS2),");
-            Console.WriteLine("\t             Bruker timsTOF DDA-PASEF .d folders (to MS2 and mzXML; written inside the .d by default),");
+            Console.WriteLine("\tInput files: .raw, .mzXML, .mzML, .ms2 (to MGF and mzParquet), .mgf (to MS2),");
+            Console.WriteLine("\t             Bruker timsTOF DDA-PASEF .d folders (to MS2, mzXML and mzParquet; written inside the .d by default),");
             Console.WriteLine("\t             or a .d folder in a .tar/.tar.gz/.tgz (the .d is extracted next to the archive,");
             Console.WriteLine("\t             and the output is written next to the .d by default)");
             Console.WriteLine("\tOptions:");
@@ -232,6 +235,7 @@ namespace RawConverter.Cli
             Console.WriteLine("\t\t--ms3\toutput MS3 file.");
             Console.WriteLine("\t\t--mgf\toutput MGF file.");
             Console.WriteLine("\t\t--mzxml\toutput mzXML file.");
+            Console.WriteLine("\t\t--mzparquet\toutput mzParquet file (one row per peak; see README).");
             Console.WriteLine("\t\t--out_folder <dir>\toutput folder (default: next to each input file).");
             Console.WriteLine("\t\t--select_mono_prec\tselect the monoisotopic m/z values of precursors in DDA data.");
             Console.WriteLine("\t\t--predict_precursors\tpredict the precursors for DIA data.");

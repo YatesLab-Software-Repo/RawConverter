@@ -26,6 +26,7 @@ namespace RawConverter
         MS3 = 4,
         MGF = 8,
         MzXML = 16,
+        MzParquet = 32,
     }
 
     public class ConversionOptions
@@ -88,6 +89,7 @@ namespace RawConverter
             if (OutputFormats.HasFlag(OutputFormat.MS3)) types.Add("ms3");
             if (OutputFormats.HasFlag(OutputFormat.MGF)) types.Add("mgf");
             if (OutputFormats.HasFlag(OutputFormat.MzXML)) types.Add("mzXML");
+            if (OutputFormats.HasFlag(OutputFormat.MzParquet)) types.Add("mzparquet");
             return types.ToArray();
         }
     }
@@ -276,11 +278,12 @@ namespace RawConverter
                     }
                 case ".ms2":
                     {
-                        if (!options.OutputFormats.HasFlag(OutputFormat.MGF))
+                        const OutputFormat ms2Outputs = OutputFormat.MGF | OutputFormat.MzParquet;
+                        if ((options.OutputFormats & ms2Outputs) == 0)
                         {
-                            throw new ArgumentException("MS2 input can only be converted to MGF.");
+                            throw new ArgumentException("MS2 input can only be converted to MGF and mzParquet.");
                         }
-                        MS2Converter mc = new MS2Converter(inFile, outFolder, new[] { "mgf" }, options.CorrectPrecursorMz);
+                        MS2Converter mc = new MS2Converter(inFile, outFolder, outFileTypes, options.CorrectPrecursorMz);
                         try
                         {
                             mc.SetOptions(options.MzDecimalPlace, options.IntensityDecimalPlace);
@@ -331,14 +334,14 @@ namespace RawConverter
         // the TimsTOF_extractor script, whose order depends on the numpy version;
         private static void CheckTimsTofOutputFormats(string input, ConversionOptions options)
         {
-            const OutputFormat supported = OutputFormat.MS2 | OutputFormat.MzXML;
+            const OutputFormat supported = OutputFormat.MS2 | OutputFormat.MzXML | OutputFormat.MzParquet;
             if ((options.OutputFormats & supported) == 0)
             {
-                throw new ArgumentException("timsTOF input can only be converted to MS2 and mzXML.");
+                throw new ArgumentException("timsTOF input can only be converted to MS2, mzXML and mzParquet.");
             }
             if ((options.OutputFormats & ~supported) != 0)
             {
-                Log.Warning("timsTOF input only produces MS2 and mzXML files; other formats are skipped for " + input);
+                Log.Warning("timsTOF input only produces MS2, mzXML and mzParquet files; other formats are skipped for " + input);
             }
         }
 
@@ -361,7 +364,8 @@ namespace RawConverter
             }
 
             new TimsTofConverter(analysisDir, outFolder, false, options.OutputFormats.HasFlag(OutputFormat.MS2),
-                options.OutputFormats.HasFlag(OutputFormat.MzXML)).Convert(progress, progressStart);
+                options.OutputFormats.HasFlag(OutputFormat.MzXML), options.OutputFormats.HasFlag(OutputFormat.MzParquet))
+                .Convert(progress, progressStart);
             Log.Info(" Conversion finished: " + analysisDir);
         }
 

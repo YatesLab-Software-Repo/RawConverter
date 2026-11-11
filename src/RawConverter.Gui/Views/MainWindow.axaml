@@ -96,6 +96,7 @@
         <CheckBox Canvas.Left="490" Canvas.Top="80" Content="mzXML" IsChecked="{Binding MzXmlChecked}" IsEnabled="{Binding MzXmlEnabled}" />
         <CheckBox Canvas.Left="567" Canvas.Top="80" Content="mzML" IsChecked="{Binding MzMlChecked}" IsEnabled="{Binding MzMlEnabled}" />
         <CheckBox Canvas.Left="411" Canvas.Top="109" Content="Log" IsChecked="{Binding LogChecked}" IsEnabled="{Binding LogEnabled}" />
+        <CheckBox Canvas.Left="490" Canvas.Top="109" Content="mzParquet" IsChecked="{Binding MzParquetChecked}" IsEnabled="{Binding MzParquetEnabled}" />
       </Canvas>
     </HeaderedContentControl>
 

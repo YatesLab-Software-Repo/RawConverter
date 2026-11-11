@@ -27,6 +27,7 @@ namespace RawConverter.Converter
         private StreamWriter _ms3Writer = null;
         private bool _isFirstMS3Scan = true;
         private MzXMLFileWriter _mzXMLWriter = null;
+        private MzParquetWriter _mzParquetWriter = null;
         private StreamWriter _chargeNumWriter = null;
         private string outFileWithoutExtentionName = null;
 
@@ -138,6 +139,10 @@ namespace RawConverter.Converter
             {
                 _mzXMLWriter.Close();
             }
+            if (_mzParquetWriter != null)
+            {
+                _mzParquetWriter.Close();
+            }
             if (_chargeNumWriter != null)
             {
                 _chargeNumWriter.Close();
@@ -171,6 +176,10 @@ namespace RawConverter.Converter
                 {
                     _mzXMLWriter = new MzXMLFileWriter(outFileWithoutExtentionName + outFileType);
                     InitMzXMLFile();
+                }
+                if (outFileType.Equals("mzparquet", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    _mzParquetWriter = new MzParquetWriter(outFileWithoutExtentionName + outFileType);
                 }
             }
         }
@@ -523,6 +532,12 @@ namespace RawConverter.Converter
             {
                 _mzXMLWriter.WriteScan(spec);
             }
+
+            // mzParquet file;
+            if (_mzParquetWriter != null)
+            {
+                _mzParquetWriter.WriteScan(spec);
+            }
         }
 
         private MassSpectrum GetSpectrumByScanNum(int scanNum)
@@ -700,6 +715,11 @@ namespace RawConverter.Converter
                     len++;
                 }
                 spectrum.PrecMzFromFilter = double.Parse(scanFilter.Substring(begin, len));
+                if (width > 0)
+                {
+                    spectrum.IsolationLowerMz = spectrum.PrecMzFromFilter - width / 2;
+                    spectrum.IsolationUpperMz = spectrum.PrecMzFromFilter + width / 2;
+                }
 
                 //Console.Write(bypassThermoAlgorithm);
                 //Console.Write(precMz);               

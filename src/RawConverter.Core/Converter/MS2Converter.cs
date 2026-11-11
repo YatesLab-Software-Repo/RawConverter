@@ -15,6 +15,7 @@ namespace RawConverter.Converter
         private StreamReader _ms2Reader = null;
         private Regex _startsWithNumber = new Regex("^[0-9]", RegexOptions.Compiled);
         private StreamWriter _mgfWriter = null;
+        private MzParquetWriter _mzParquetWriter = null;
         private String _ms2File = null;
 
         private int _mzDecimalPlace = 0;
@@ -64,6 +65,10 @@ namespace RawConverter.Converter
                 if (outFileType.Equals("mgf", StringComparison.InvariantCultureIgnoreCase))
                 {
                     _mgfWriter = new StreamWriter(outFileWithoutExtentionName + outFileType);
+                }
+                if (outFileType.Equals("mzparquet", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    _mzParquetWriter = new MzParquetWriter(outFileWithoutExtentionName + outFileType);
                 }
             }
         }
@@ -135,6 +140,7 @@ namespace RawConverter.Converter
             double precInt = 0;
             int precScan = 0;
             double ionInjectionTime = 0;
+            double? ionMobility = null;
             String activationType = null;
             String instType = null;
             List<Tuple<double, int>> precursors = new List<Tuple<double, int>>();
@@ -178,6 +184,11 @@ namespace RawConverter.Converter
                             ionInjectionTime = double.Parse(elems[2]);
                         }
                     }
+                    else if (line.StartsWith("I\tIon Mobility"))
+                    {
+                        // timsTOF precursor 1/K0;
+                        ionMobility = double.Parse(elems[2]);
+                    }
                     else if (line.StartsWith("I\tActivationType"))
                     {
                         activationType = elems[2];
@@ -207,6 +218,8 @@ namespace RawConverter.Converter
             spec.PrecursorIntensity = precInt;
             spec.PrecursorScanNumber = precScan;
             spec.PeptideSequence = pepSeq;
+            spec.MsLevel = 2;
+            spec.IonMobility = ionMobility;
 
             return spec;
         }
@@ -218,6 +231,12 @@ namespace RawConverter.Converter
             {
                 TextFileWriter.WriteToMGF(_mgfWriter, spec, _ms2File, _mzDecimalPlace, _intensityDecimalPlace, false, false);
             }
+
+            // mzParquet file; RetTime is written as it is (seconds in .ms2 files from timsTOF data);
+            if (_mzParquetWriter != null)
+            {
+                _mzParquetWriter.WriteScan(spec);
+            }
         }
 
         public void Close()
@@ -227,6 +246,10 @@ namespace RawConverter.Converter
             if (_mgfWriter != null)
             {
                 _mgfWriter.Close();
+            }
+            if (_mzParquetWriter != null)
+            {
+                _mzParquetWriter.Close();
             }
         }
     }

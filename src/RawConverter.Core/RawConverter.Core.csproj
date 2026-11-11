@@ -6,6 +6,7 @@
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageReference Include="Parquet.Net" Version="6.1.0" />
     <PackageReference Include="ThermoFisher.CommonCore.Data" Version="5.0.0.7" />
     <PackageReference Include="ThermoFisher.CommonCore.RawFileReader" Version="5.0.0.7" />
     <!-- Loaded by RawFileReader at runtime but not declared in its package. It needs the 2.x API;

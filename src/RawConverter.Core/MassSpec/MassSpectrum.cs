@@ -46,6 +46,17 @@ namespace RawConverter.MassSpec
         public double IsolationWindowSize { get; set; }
 
         /// <summary>
+        /// Isolation window bounds in m/z, when the input gives them (mzParquet output).
+        /// </summary>
+        public double? IsolationLowerMz { get; set; }
+        public double? IsolationUpperMz { get; set; }
+
+        /// <summary>
+        /// Precursor ion mobility (1/K0) of timsTOF MS2 spectra.
+        /// </summary>
+        public double? IonMobility { get; set; }
+
+        /// <summary>
         /// Empty Constructor for serializing class
         /// </summary>
         public MassSpectrum() { }

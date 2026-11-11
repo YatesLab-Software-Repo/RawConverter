@@ -20,6 +20,7 @@ namespace RawConverter.Converter
         private StreamWriter _ms2Writer = null;
         private bool _isFirstMS2Scan = true;
         private StreamWriter _ms3Writer = null;
+        private MzParquetWriter _mzParquetWriter = null;
         private bool _isFirstMS3Scan = true;
 
         private String _mzxmlFileName = null;
@@ -67,6 +68,10 @@ namespace RawConverter.Converter
                 if (outFileType.Equals("ms3", StringComparison.InvariantCultureIgnoreCase))
                 {
                     _ms3Writer = new StreamWriter(outFileWithoutExtentionName + outFileType);
+                }
+                if (outFileType.Equals("mzparquet", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    _mzParquetWriter = new MzParquetWriter(outFileWithoutExtentionName + outFileType);
                 }
             }
         }
@@ -279,6 +284,12 @@ namespace RawConverter.Converter
             {
                 TextFileWriter.WriteToMGF(_mgfWriter, spec, _mzxmlFileName, _mzDecimalPlace, _intensityDecimalPlace, false, false);
             }
+
+            // mzParquet file;
+            if (_mzParquetWriter != null)
+            {
+                _mzParquetWriter.WriteScan(spec);
+            }
         }
 
         public void Close()
@@ -300,6 +311,10 @@ namespace RawConverter.Converter
             if (_ms3Writer != null)
             {
                 _ms3Writer.Close();
+            }
+            if (_mzParquetWriter != null)
+            {
+                _mzParquetWriter.Close();
             }
         }
         

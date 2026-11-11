@@ -1,7 +1,7 @@
 # RawConverter
 
-Converts Thermo RAW files (and mzXML, mzML, MS2 and MGF files) to MS1, MS2, MS3, MGF and mzXML, and Bruker
-timsTOF DDA-PASEF data (`.d` folders) to MS2 and mzXML.
+Converts Thermo RAW files (and mzXML, mzML, MS2 and MGF files) to MS1, MS2, MS3, MGF, mzXML and mzParquet,
+and Bruker timsTOF DDA-PASEF data (`.d` folders) to MS2, mzXML and mzParquet.
 It can also correct DDA precursor m/z values and predict DIA precursors. Runs on Linux and Windows (x64)
 with .NET 10, using Thermo's RawFileReader library (no Wine or MSFileReader needed).
 
@@ -38,7 +38,8 @@ license files, and the Microsoft Visual C++ runtime that Bruker's `timsdata.dll`
 `RawConverterGUI` reproduces the legacy WinForms window and menus on Windows and Linux. Besides the legacy
 inputs, `+` accepts timsTOF `.d.tar`/`.tar.gz` archives and `.d` adds timsTOF `.d` folders; files and folders
 can also be dropped on the list. Output goes to the destination directory. Checking `Log` writes the log to a
-`RawConverter_<date>.log` file there.
+`RawConverter_<date>.log` file there. The `mzParquet` output format accepts RAW, mzXML, mzML, MS2 and timsTOF
+input.
 
 On Linux the GUI needs an X11 or XWayland display, plus fontconfig and the basic X11 libraries (RHEL:
 `fontconfig libICE libSM libX11 libXrandr libXi libXcursor`; Ubuntu: `libfontconfig1 libice6 libsm6 libx11-6
@@ -49,7 +50,8 @@ libxrandr2 libxi6 libxcursor1`), which desktop installations already have.
 ```
 RawConverter <input_file> [<input_file> ...] [options]
 
-  --ms1 --ms2 --ms3 --mgf --mzxml   output formats (at least one)
+  --ms1 --ms2 --ms3 --mgf --mzxml --mzparquet
+                                    output formats (at least one)
   --out_folder <dir>                output folder (default: next to each input file)
   --select_mono_prec                DDA: select the monoisotopic precursor m/z
   --predict_precursors              DIA: predict precursors
@@ -59,8 +61,21 @@ RawConverter <input_file> [<input_file> ...] [options]
 
 For example: `RawConverter sample.raw --ms1 --ms2 --select_mono_prec`
 
-MS2 input converts only to MGF, and MGF input converts only to MS2. The exit code is 0 on success, 1 if any
-file failed, and 2 for invalid arguments.
+MS2 input converts only to MGF and mzParquet, and MGF input converts only to MS2. The exit code is 0 on success,
+1 if any file failed, and 2 for invalid arguments.
+
+**mzParquet:** `--mzparquet` writes `<name>.mzparquet`, the format of Chaparral Labs'
+[mzParquet Converter](https://github.com/ChaparralLabs/mzparquet_converter) (ThermoParquet and dotD2parquet): a
+Zstandard-compressed Apache Parquet table with one row per peak and the columns `scan`, `level`, `rt`, `mz`,
+`intensity` (rounded to an integer), `ion_mobility`, `isolation_lower`, `isolation_upper`, `precursor_scan`,
+`precursor_mz` and `precursor_charge`. It holds the same spectra and peaks as the MS1/MS2/MS3 output (centroided,
+with the corrected or predicted precursors when those options are on); spectra without peaks have no rows. A
+spectrum with several precursor candidates (unknown charge, or predicted DIA precursors) gets the first one, and a
+charge of 0 is stored as null. As in that converter, `rt` is in minutes for Thermo, mzML and mzXML input and in
+seconds for timsTOF input; MS2 input keeps its `RetTime` values (seconds in MS2 files from timsTOF data). For
+timsTOF, MS1 frames are summed over ion mobility and centroided as in the mzXML output (`ion_mobility` is null),
+and MS2 rows carry the precursor's 1/K0 and its isolation window. It can be read with any Parquet library, e.g.
+`polars.read_parquet("sample.mzparquet")`.
 
 **timsTOF:** pass the `.d` folder, e.g. `RawConverter sample.d --ms2`. This is a port of the
 TimsTOF_extractor script (`extract_msn_nopd.py` 0.2.4) and writes the same MS2 output, using Bruker's TDF SDK
