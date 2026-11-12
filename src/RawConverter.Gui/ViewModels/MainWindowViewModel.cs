@@ -515,6 +515,37 @@ namespace RawConverter.Gui.ViewModels
         /// </summary>
         public Func<CancellationToken, Task<ReleaseInfo>> UpdateSource { get; set; } = UpdateChecker.CheckForUpdateAsync;
 
+        /// <summary>
+        /// Downloads and verifies a release's Windows installer, returning its path; replaceable in tests.
+        /// </summary>
+        public Func<ReleaseInfo, CancellationToken, Task<string>> InstallerDownloader { get; set; } = (release, ct) =>
+            UpdateChecker.DownloadInstallerAsync(release, Path.Combine(Path.GetTempPath(), "RawConverter-update"), null, ct);
+
+        /// <summary>
+        /// Starts a downloaded installer (which reopens RawConverter when done); replaceable in tests.
+        /// </summary>
+        public Action<string> InstallerStarter { get; set; } = UpdateChecker.StartInstaller;
+
+        /// <summary>
+        /// Whether this copy can install updates itself (Windows, installed with the installer).
+        /// </summary>
+        public bool CanInstallUpdates { get; set; } = UpdateChecker.CanInstallUpdates;
+
+        /// <summary>
+        /// Whether this is a nightly build, which installs newer nightlies at startup.
+        /// </summary>
+        public bool IsNightlyBuild { get; set; } = UpdateChecker.IsNightlyBuild;
+
+        /// <summary>
+        /// Raised when an update installer has started and RawConverter should close.
+        /// </summary>
+        public event Action ExitRequested;
+
+        /// <summary>Help > Install Nightly Updates Automatically (nightly builds; saved by the window).</summary>
+        [ObservableProperty] private bool _installNightlyUpdatesAutomatically = true;
+
+        private string _downloadedInstaller;
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsUpdateAvailable), nameof(UpdateMenuText))]
         private ReleaseInfo _availableUpdate;
@@ -566,19 +597,104 @@ namespace RawConverter.Gui.ViewModels
                 return;
             }
             AddLogLine("RawConverter " + update.Version + " is available: " + update.Url);
-            if (userInitiated && await _dialogs.Confirm("RawConverter " + update.Version + " is available (this is "
-                + ConversionRunner.Version + ").\n\nOpen the download page?", title))
+            if (!userInitiated)
+            {
+                // a nightly build keeps itself on the latest nightly without asking;
+                if (IsNightlyBuild && InstallNightlyUpdatesAutomatically && CanInstall(update))
+                {
+                    await InstallUpdate(update, false);
+                }
+                return;
+            }
+            await OfferUpdate(update, "RawConverter " + update.Version + " is available (this is " + ConversionRunner.Version + ").");
+        }
+
+        /// <summary>
+        /// The "Update available" menu item: install the update if this copy can, otherwise open its page.
+        /// </summary>
+        public Task ApplyAvailableUpdate()
+        {
+            if (AvailableUpdate == null)
+            {
+                return OpenUpdatePage();
+            }
+            return OfferUpdate(AvailableUpdate, "Update to RawConverter " + AvailableUpdate.Version + "?");
+        }
+
+        /// <summary>
+        /// Open the release page of the available update (or the releases page).
+        /// </summary>
+        public Task OpenUpdatePage()
+        {
+            return _dialogs.OpenUrl(AvailableUpdate?.Url ?? UpdateChecker.ReleasesPage);
+        }
+
+        private bool CanInstall(ReleaseInfo update)
+        {
+            return CanInstallUpdates && (update.InstallerUrl != null || _downloadedInstaller != null);
+        }
+
+        private async Task OfferUpdate(ReleaseInfo update, string question)
+        {
+            const string title = "Update RawConverter";
+            if (CanInstall(update))
+            {
+                if (await _dialogs.Confirm(question + "\n\nInstall it now? RawConverter will close and reopen when the "
+                    + "update is installed.", title))
+                {
+                    await InstallUpdate(update, true);
+                }
+            }
+            else if (await _dialogs.Confirm(question + "\n\nOpen the download page?", title))
             {
                 await _dialogs.OpenUrl(update.Url);
             }
         }
 
         /// <summary>
-        /// The "Update available" menu item: open the release page.
+        /// Download and verify the installer, start it and ask the window to close. Nothing is installed while a
+        /// conversion is running: the downloaded installer is kept, and the "Update available" item installs it.
         /// </summary>
-        public Task OpenUpdatePage()
+        private async Task InstallUpdate(ReleaseInfo update, bool userInitiated)
         {
-            return _dialogs.OpenUrl(AvailableUpdate?.Url ?? UpdateChecker.ReleasesPage);
+            if (_downloadedInstaller == null || !File.Exists(_downloadedInstaller))
+            {
+                AddLogLine("Downloading RawConverter " + update.Version + "...");
+                try
+                {
+                    _downloadedInstaller = await InstallerDownloader(update, CancellationToken.None);
+                }
+                catch (Exception e) when (e is HttpRequestException || e is TaskCanceledException || e is IOException
+                    || e is InvalidDataException)
+                {
+                    _downloadedInstaller = null;
+                    AddLogLine("Could not download the update: " + e.Message);
+                    if (userInitiated)
+                    {
+                        await _dialogs.ShowMessage("Could not download the update: " + e.Message, "Update RawConverter");
+                    }
+                    return;
+                }
+            }
+            if (IsRunning)
+            {
+                AddLogLine("RawConverter " + update.Version + " is downloaded; choose \"" + UpdateMenuText
+                    + "\" when the conversion has finished to install it.");
+                return;
+            }
+
+            AddLogLine("Installing RawConverter " + update.Version + "; RawConverter will reopen when it is done.");
+            try
+            {
+                InstallerStarter(_downloadedInstaller);
+            }
+            catch (Exception e) when (e is System.ComponentModel.Win32Exception || e is IOException)
+            {
+                // e.g. the administrator prompt was declined;
+                AddLogLine("The update was not installed: " + e.Message);
+                return;
+            }
+            ExitRequested?.Invoke();
         }
 
         public void AddLogLine(string line)

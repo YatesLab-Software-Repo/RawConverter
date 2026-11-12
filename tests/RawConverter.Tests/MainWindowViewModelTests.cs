@@ -300,6 +300,116 @@ namespace RawConverter.Tests
             Assert.False(called);
         }
 
+        private static readonly ReleaseInfo Nightly =
+            new ReleaseInfo("9.9.9-nightly.20991231.1", "https://example.org/nightly", "https://example.org/setup.exe",
+                "https://example.org/SHA256SUMS.txt");
+
+        private string FakeInstaller => Path.Combine(_dir, "setup.exe");
+
+        private List<string> UseFakeInstaller(bool nightlyBuild, Func<string> download = null)
+        {
+            List<string> events = new List<string>();
+            _vm.IsNightlyBuild = nightlyBuild;
+            _vm.CanInstallUpdates = true;
+            _vm.UpdateSource = ct => Task.FromResult(Nightly);
+            _vm.InstallerDownloader = (release, ct) =>
+            {
+                events.Add("download " + release.Version);
+                if (download != null)
+                {
+                    return Task.FromResult(download());
+                }
+                File.WriteAllText(FakeInstaller, "");
+                return Task.FromResult(FakeInstaller);
+            };
+            _vm.InstallerStarter = path => events.Add("start " + path);
+            _vm.ExitRequested += () => events.Add("exit");
+            return events;
+        }
+
+        [Fact]
+        public async Task NightlyBuildInstallsNewerNightlyAtStartup()
+        {
+            List<string> events = UseFakeInstaller(true);
+
+            await _vm.CheckForUpdatesAtStartupIfEnabled();
+
+            Assert.Equal(new[] { "download 9.9.9-nightly.20991231.1", "start " + FakeInstaller, "exit" }, events);
+            Assert.Empty(_dialogs.Messages);
+            Assert.Contains(_vm.LogLines, l => l.StartsWith("Installing RawConverter 9.9.9-nightly"));
+        }
+
+        [Fact]
+        public async Task ReleaseBuildDoesNotInstallAtStartup()
+        {
+            List<string> events = UseFakeInstaller(false);
+
+            await _vm.CheckForUpdatesAtStartupIfEnabled();
+
+            Assert.Empty(events);
+            Assert.True(_vm.IsUpdateAvailable);
+        }
+
+        [Fact]
+        public async Task AutomaticNightlyInstallCanBeTurnedOff()
+        {
+            List<string> events = UseFakeInstaller(true);
+            _vm.InstallNightlyUpdatesAutomatically = false;
+
+            await _vm.CheckForUpdatesAtStartupIfEnabled();
+
+            Assert.Empty(events);
+            Assert.True(_vm.IsUpdateAvailable);
+        }
+
+        [Fact]
+        public async Task NothingIsInstalledDuringAConversion()
+        {
+            List<string> events = UseFakeInstaller(true);
+            _vm.IsRunning = true;
+
+            await _vm.CheckForUpdatesAtStartupIfEnabled();
+            Assert.Equal(new[] { "download 9.9.9-nightly.20991231.1" }, events);
+
+            // when the conversion has finished, the menu item installs the downloaded installer;
+            _vm.IsRunning = false;
+            await _vm.ApplyAvailableUpdate();
+            Assert.Equal(new[] { "download 9.9.9-nightly.20991231.1", "start " + FakeInstaller, "exit" }, events);
+        }
+
+        [Fact]
+        public async Task FailedDownloadKeepsRawConverterOpen()
+        {
+            List<string> events = UseFakeInstaller(true, () => throw new InvalidDataException("checksum mismatch"));
+
+            await _vm.CheckForUpdatesAtStartupIfEnabled();
+
+            Assert.DoesNotContain("exit", events);
+            Assert.Contains(_vm.LogLines, l => l.Contains("checksum mismatch"));
+        }
+
+        [Fact]
+        public async Task ExplicitCheckOffersToInstall()
+        {
+            List<string> events = UseFakeInstaller(false);
+
+            await _vm.CheckForUpdates(true);
+
+            Assert.Contains(_dialogs.Messages, m => m.Contains("Install it now?"));
+            Assert.Equal(new[] { "download 9.9.9-nightly.20991231.1", "start " + FakeInstaller, "exit" }, events);
+        }
+
+        [Fact]
+        public async Task DeclinedInstallDoesNothing()
+        {
+            List<string> events = UseFakeInstaller(false);
+            _dialogs.ConfirmResult = false;
+
+            await _vm.CheckForUpdates(true);
+
+            Assert.Empty(events);
+        }
+
         [Fact]
         public async Task ExplicitCheckOffersDownloadPage()
         {

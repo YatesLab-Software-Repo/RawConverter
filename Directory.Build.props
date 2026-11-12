@@ -4,7 +4,7 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Authors>Yates Lab, The Scripps Research Institute</Authors>
     <Product>RawConverter</Product>
   </PropertyGroup>

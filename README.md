@@ -53,9 +53,21 @@ Both scripts take the version from `Directory.Build.props`, or from `VERSION` if
 
 ### Releases
 
-Pushing a version tag (`git tag 1.2.1 && git push origin 1.2.1`) runs `.github/workflows/release.yml`: it runs the
-tests, builds the Windows installer and the Linux packages, and publishes them with checksums as a GitHub Release.
-Running the workflow by hand from the Actions tab builds the same files as workflow artifacts without releasing.
+Pushing a version tag (`git tag 1.3.0 && git push origin 1.3.0`) runs `.github/workflows/release.yml`: it runs the
+tests, builds the Windows installer and the Linux packages (`.github/workflows/build.yml`), and publishes them with
+checksums as a GitHub Release. Running the workflow by hand from the Actions tab builds the same files as workflow
+artifacts without releasing. After a release, raise `<Version>` in `Directory.Build.props` (e.g. to 1.3.1 or 1.4.0)
+so that nightlies are numbered above it.
+
+### Nightly builds
+
+`.github/workflows/nightly.yml` runs every night at 08:00 UTC. If `unify-net10` (the `BRANCH` setting at the top of
+the workflow) has new commits since the last nightly, it builds them as `<Version>-nightly.<yyyymmdd>.<run>` (e.g.
+`1.3.0-nightly.20261112.42`) and replaces the rolling pre-release
+[`nightly`](https://github.com/YatesLab-Software-Repo/RawConverter/releases/tag/nightly): there is always exactly
+one nightly, and its title carries the version. GitHub runs scheduled workflows only from the default branch, so the
+schedule starts once the workflow is on `main`; until then, or to build at once, use Actions -> Nightly -> Run
+workflow (tick "force" to build without new commits).
 
 ## GUI
 
@@ -77,6 +89,14 @@ At startup the GUI asks GitHub for the latest release
 "Update available" item appears in the menu bar (it opens the release page) and the log says so; offline, nothing
 happens. The request sends nothing about your files; GitHub sees only your IP address and the RawConverter version.
 Pre-releases are not offered.
+
+**Nightly installs** (installed from a nightly installer) also look at the `nightly` release, and are offered the
+next nightly or a newer release, whichever is newer. On Windows, a nightly installed with the installer updates
+itself at startup: it downloads the new installer, checks it against the release's `SHA256SUMS.txt`, runs it
+silently (Windows asks for administrator rights) and reopens when it is done. It never installs during a
+conversion. `Help > Install Nightly Updates Automatically` turns this off. Release builds ask first: on Windows,
+"Update available" and `Help > Check for Updates...` offer to install the update the same way. Portable copies and
+Linux packages are told about updates but do not install them.
 
 - `Help > Check for Updates...` checks on demand; `Help > Check for Updates at Startup` turns the automatic check
   off (saved in `settings.json` in `%APPDATA%\RawConverter` or `~/.config/RawConverter`).

@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,11 +18,21 @@ namespace RawConverter
     /// </summary>
     public sealed class ReleaseInfo
     {
-        public ReleaseInfo(string version, string url)
+        public ReleaseInfo(string version, string url, string installerUrl = null, string checksumsUrl = null)
         {
             Version = version;
             Url = url;
+            InstallerUrl = installerUrl;
+            ChecksumsUrl = checksumsUrl;
         }
+
+        /// <summary>The Windows installer (RawConverter-*-win-x64-setup.exe), or null if the release has none.</summary>
+        public string InstallerUrl { get; }
+
+        /// <summary>The release's SHA256SUMS.txt, used to verify a downloaded installer.</summary>
+        public string ChecksumsUrl { get; }
+
+        public bool IsNightly => UpdateChecker.IsNightlyVersion(Version);
 
         /// <summary>The release version, without a leading "v" ("1.2.2").</summary>
         public string Version { get; }
@@ -37,6 +51,29 @@ namespace RawConverter
             "https://api.github.com/repos/YatesLab-Software-Repo/RawConverter/releases/latest";
 
         public const string ReleasesPage = "https://github.com/YatesLab-Software-Repo/RawConverter/releases/latest";
+
+        /// <summary>
+        /// The rolling nightly pre-release (nightly.yml). Its tag is always "nightly"; the version is in its title.
+        /// </summary>
+        public const string NightlyReleaseApi =
+            "https://api.github.com/repos/YatesLab-Software-Repo/RawConverter/releases/tags/nightly";
+
+        /// <summary>
+        /// Whether this is a nightly build ("1.3.0-nightly.20261112.42"); nightly builds also look for newer nightlies.
+        /// </summary>
+        public static bool IsNightlyBuild => IsNightlyVersion(ConversionRunner.Version);
+
+        public static bool IsNightlyVersion(string version)
+        {
+            return version != null && version.Contains("-nightly", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Whether this copy can install updates itself: on Windows, when it was installed with the installer (rather
+        /// than unpacked from the portable zip).
+        /// </summary>
+        public static bool CanInstallUpdates =>
+            OperatingSystem.IsWindows() && File.Exists(Path.Combine(AppContext.BaseDirectory, "unins000.exe"));
 
         /// <summary>
         /// Setting this environment variable to anything but "" or "0" turns off the GUI's automatic check at startup
@@ -59,22 +96,56 @@ namespace RawConverter
         /// The latest release if it is newer than this version of RawConverter, otherwise null. Throws on network or
         /// GitHub errors (HttpRequestException, TaskCanceledException on timeout).
         /// </summary>
-        public static async Task<ReleaseInfo> CheckForUpdateAsync(CancellationToken cancellationToken = default)
+        public static Task<ReleaseInfo> CheckForUpdateAsync(CancellationToken cancellationToken = default)
         {
-            ReleaseInfo latest = await GetLatestReleaseAsync(null, cancellationToken).ConfigureAwait(false);
-            return latest != null && IsNewer(latest.Version, ConversionRunner.Version) ? latest : null;
+            return CheckForUpdateAsync(ConversionRunner.Version, null, cancellationToken);
+        }
+
+        /// <summary>
+        /// The newest release that is newer than currentVersion, or null: the latest release, and for a nightly
+        /// build also the latest nightly (so nightly users get the next nightly, or a newer release).
+        /// </summary>
+        /// <param name="handler">for tests; null uses the default network handler</param>
+        public static async Task<ReleaseInfo> CheckForUpdateAsync(string currentVersion, HttpMessageHandler handler,
+            CancellationToken cancellationToken = default)
+        {
+            ReleaseInfo best = null;
+            List<string> apis = new List<string> { LatestReleaseApi };
+            if (IsNightlyVersion(currentVersion))
+            {
+                apis.Add(NightlyReleaseApi);
+            }
+            foreach (string api in apis)
+            {
+                ReleaseInfo release = await GetReleaseAsync(api, handler, cancellationToken).ConfigureAwait(false);
+                if (release != null && IsNewer(release.Version, currentVersion)
+                    && (best == null || IsNewer(release.Version, best.Version)))
+                {
+                    best = release;
+                }
+            }
+            return best;
         }
 
         /// <summary>
         /// The latest (non-pre-release) release, or null if none is published.
         /// </summary>
         /// <param name="handler">for tests; null uses the default network handler</param>
-        public static async Task<ReleaseInfo> GetLatestReleaseAsync(HttpMessageHandler handler,
+        public static Task<ReleaseInfo> GetLatestReleaseAsync(HttpMessageHandler handler,
+            CancellationToken cancellationToken = default)
+        {
+            return GetReleaseAsync(LatestReleaseApi, handler, cancellationToken);
+        }
+
+        /// <summary>
+        /// A release from GitHub's releases API, or null if there is none (404).
+        /// </summary>
+        public static async Task<ReleaseInfo> GetReleaseAsync(string api, HttpMessageHandler handler,
             CancellationToken cancellationToken = default)
         {
             using HttpClient client = handler == null ? new HttpClient() : new HttpClient(handler, false);
             client.Timeout = Timeout;
-            using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, LatestReleaseApi);
+            using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, api);
             // GitHub rejects requests without a User-Agent;
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RawConverter", ConversionRunner.Version ?? "0"));
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
@@ -101,8 +172,112 @@ namespace RawConverter
             {
                 return null;
             }
+            string version = NormalizeVersion(tag);
+            if (!TryParse(version, out _, out _))
+            {
+                // the nightly release: tag "nightly", title "RawConverter 1.3.0-nightly.20261112.42";
+                string name = root.TryGetProperty("name", out JsonElement n) ? n.GetString() : null;
+                version = name?.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+                if (!TryParse(version, out _, out _))
+                {
+                    return null;
+                }
+                version = NormalizeVersion(version);
+            }
             string url = root.TryGetProperty("html_url", out JsonElement u) ? u.GetString() : null;
-            return new ReleaseInfo(NormalizeVersion(tag), string.IsNullOrEmpty(url) ? ReleasesPage : url);
+
+            string installer = null, checksums = null;
+            if (root.TryGetProperty("assets", out JsonElement assets) && assets.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement asset in assets.EnumerateArray())
+                {
+                    string assetName = asset.TryGetProperty("name", out JsonElement an) ? an.GetString() ?? "" : "";
+                    string download = asset.TryGetProperty("browser_download_url", out JsonElement d) ? d.GetString() : null;
+                    if (assetName.EndsWith("-win-x64-setup.exe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        installer = download;
+                    }
+                    else if (assetName.Equals("SHA256SUMS.txt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        checksums = download;
+                    }
+                }
+            }
+            return new ReleaseInfo(version, string.IsNullOrEmpty(url) ? ReleasesPage : url, installer, checksums);
+        }
+
+        /// <summary>
+        /// Download the release's Windows installer into folder and check it against the release's SHA256SUMS.txt;
+        /// returns its path. Throws InvalidDataException if the release has no installer or checksum, or the
+        /// checksum does not match (the file is then deleted).
+        /// </summary>
+        /// <param name="handler">for tests; null uses the default network handler</param>
+        public static async Task<string> DownloadInstallerAsync(ReleaseInfo release, string folder, HttpMessageHandler handler,
+            CancellationToken cancellationToken = default)
+        {
+            if (release.InstallerUrl == null || release.ChecksumsUrl == null)
+            {
+                throw new InvalidDataException("RawConverter " + release.Version + " has no Windows installer with a checksum.");
+            }
+            using HttpClient client = handler == null ? new HttpClient() : new HttpClient(handler, false);
+            client.Timeout = TimeSpan.FromMinutes(10);
+            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("RawConverter", ConversionRunner.Version ?? "0"));
+
+            string fileName = Path.GetFileName(new Uri(release.InstallerUrl).LocalPath);
+            string checksums = await client.GetStringAsync(release.ChecksumsUrl, cancellationToken).ConfigureAwait(false);
+            string expected = ExpectedChecksum(checksums, fileName)
+                ?? throw new InvalidDataException("SHA256SUMS.txt has no checksum for " + fileName);
+
+            Directory.CreateDirectory(folder);
+            string path = Path.Combine(folder, fileName);
+            using (HttpResponseMessage response = await client.GetAsync(release.InstallerUrl,
+                HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false))
+            {
+                response.EnsureSuccessStatusCode();
+                using FileStream file = File.Create(path);
+                await response.Content.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
+            }
+
+            string actual;
+            using (FileStream file = File.OpenRead(path))
+            {
+                actual = Convert.ToHexString(SHA256.HashData(file));
+            }
+            if (!actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
+            {
+                File.Delete(path);
+                throw new InvalidDataException("The downloaded " + fileName + " does not match its checksum.");
+            }
+            return path;
+        }
+
+        /// <summary>
+        /// The SHA-256 of fileName in a sha256sum listing ("hex  name" or "hex *name"), or null.
+        /// </summary>
+        public static string ExpectedChecksum(string sha256Sums, string fileName)
+        {
+            foreach (string line in sha256Sums.Split('\n'))
+            {
+                string[] parts = line.Trim().Split((char[])null, 2, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2 && parts[1].TrimStart('*') == fileName && parts[0].Length == 64)
+                {
+                    return parts[0];
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Run a downloaded installer to update this installation without questions (Windows asks for administrator
+        /// rights); it reopens RawConverter when done (/RELAUNCH=1, see RawConverter.iss). The caller should then exit.
+        /// </summary>
+        public static void StartInstaller(string installerPath)
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(installerPath,
+                "/SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1")
+            {
+                UseShellExecute = true,   // lets Windows show the administrator prompt;
+            });
         }
 
         /// <summary>

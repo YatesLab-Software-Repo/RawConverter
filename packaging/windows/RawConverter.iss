@@ -96,8 +96,15 @@ Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter"; ValueType: n
 Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; \
     StatusMsg: "Installing the Microsoft Visual C++ runtime..."; Flags: waituntilterminated; Check: NeedsVcRedist
 Filename: "{app}\RawConverterGUI.exe"; Description: "{cm:LaunchProgram,RawConverter}"; Flags: nowait postinstall skipifsilent
+; an update started from RawConverter (/SILENT /RELAUNCH=1) reopens it, as the user who started it;
+Filename: "{app}\RawConverterGUI.exe"; Flags: nowait runasoriginaluser; Check: RelaunchRequested
 
 [Code]
+function RelaunchRequested: Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:RELAUNCH|0}') = '1');
+end;
+
 // The runtime registers itself here; version 14.40 or later covers VCRUNTIME140_1 and VCOMP140 of VS 2022.
 function NeedsVcRedist: Boolean;
 var

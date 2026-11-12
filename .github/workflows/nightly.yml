@@ -1,0 +1,89 @@
+# Nightly builds: every night, if the development branch has new commits, build it as
+# <version>-nightly.<yyyymmdd>.<run> and replace the rolling "nightly" pre-release on GitHub
+# (https://github.com/YatesLab-Software-Repo/RawConverter/releases/tag/nightly).
+# Nightly installs of RawConverter check that release and update themselves (see README, "Update check").
+#
+# GitHub runs scheduled workflows only from the default branch (main), so the schedule starts once this file
+# is on main; until then, run it from the Actions tab ("Nightly" -> Run workflow).
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # 08:00 UTC: midnight (PST) / 1 am (PDT) in California
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Build even if nothing changed since the last nightly
+        type: boolean
+        default: false
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+env:
+  BRANCH: unify-net10   # the branch nightlies are built from
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.check.outputs.sha }}
+      version: ${{ steps.check.outputs.version }}
+      build: ${{ steps.check.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          last=$(gh release view nightly --json targetCommitish -q .targetCommitish 2>/dev/null || true)
+          base=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props)
+          version="$base-nightly.$(date -u +%Y%m%d).$GITHUB_RUN_NUMBER"
+          build=true
+          if [ "$sha" = "$last" ] && [ "$FORCE" != true ]; then
+            build=false
+            echo "No new commits on $BRANCH since the last nightly ($sha); skipping."
+          fi
+          {
+            echo "sha=$sha"
+            echo "version=$version"
+            echo "build=$build"
+          } >> "$GITHUB_OUTPUT"
+          echo "Commit $sha, version $version, build $build"
+
+  build:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.check.outputs.sha }}
+      version: ${{ needs.check.outputs.version }}
+
+  publish:
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # replace the nightly release and its tag
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: cd dist && sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Replace the nightly pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.check.outputs.version }}
+          SHA: ${{ needs.check.outputs.sha }}
+        run: |
+          gh release delete nightly --cleanup-tag --yes 2>/dev/null || true
+          # the title carries the version: the update check reads it from there (the tag is always "nightly");
+          gh release create nightly dist/* --prerelease --target "$SHA" --title "RawConverter $VERSION" \
+            --notes "Nightly build of \`$BRANCH\` at $SHA ($(date -u '+%Y-%m-%d %H:%M UTC')). Untested; for trying out new features. Nightly installs update themselves to the next nightly."

@@ -36,12 +36,13 @@
       <MenuItem Header="Help">
         <MenuItem Header="Check for Updates..." Click="OnCheckForUpdates" />
         <MenuItem Name="CheckUpdatesAtStartupMenu" Header="Check for Updates at Startup" ToggleType="CheckBox" />
+        <MenuItem Name="AutoInstallNightlyMenu" Header="Install Nightly Updates Automatically" ToggleType="CheckBox" />
         <Separator />
         <MenuItem Header="About RawConverter" Click="OnAbout" />
       </MenuItem>
       <!-- shown when a newer release is found; opens its page; -->
       <MenuItem Header="{Binding UpdateMenuText}" IsVisible="{Binding IsUpdateAvailable}" FontWeight="Bold"
-                Click="OnOpenUpdatePage" ToolTip.Tip="Open the download page" />
+                Click="OnOpenUpdatePage" ToolTip.Tip="Install the update, or open its download page" />
     </Menu>
 
     <!-- Everything but Stop! and the log is disabled while converting. -->

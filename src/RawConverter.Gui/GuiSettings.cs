@@ -12,6 +12,9 @@ namespace RawConverter.Gui
     {
         public bool CheckForUpdatesAtStartup { get; set; } = true;
 
+        /// <summary>Nightly builds: install a newer nightly at startup without asking.</summary>
+        public bool InstallNightlyUpdatesAutomatically { get; set; } = true;
+
         public static string DefaultPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RawConverter", "settings.json");
 
