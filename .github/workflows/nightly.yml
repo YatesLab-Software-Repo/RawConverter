@@ -1,4 +1,4 @@
-# Nightly builds: every night, if the development branch has new commits, build it as
+# Nightly builds: every night, if the source branch (see SOURCE below) has new commits, build it as
 # <version>-nightly.<yyyymmdd>.<run> and replace the rolling "nightly" pre-release on GitHub
 # (https://github.com/YatesLab-Software-Repo/RawConverter/releases/tag/nightly).
 # Nightly installs of RawConverter check that release and update themselves (see README, "Update check").
@@ -12,6 +12,10 @@ on:
     - cron: '0 8 * * *'   # 08:00 UTC: midnight (PST) / 1 am (PDT) in California
   workflow_dispatch:
     inputs:
+      ref:
+        description: Branch, tag or commit to build (empty = the NIGHTLY_BRANCH variable, or unify-net10)
+        type: string
+        default: ''
       force:
         description: Build even if nothing changed since the last nightly
         type: boolean
@@ -22,7 +26,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  BRANCH: unify-net10   # the branch nightlies are built from
+  # What nightlies are built from: the "ref" of a manual run (branch, tag or commit), else the repository variable
+  # NIGHTLY_BRANCH (Settings -> Secrets and variables -> Actions -> Variables), else unify-net10.
+  SOURCE: ${{ inputs.ref || vars.NIGHTLY_BRANCH || 'unify-net10' }}
 
 jobs:
   check:
@@ -34,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.BRANCH }}
+          ref: ${{ env.SOURCE }}
       - id: check
         env:
           GH_TOKEN: ${{ github.token }}
@@ -47,7 +53,7 @@ jobs:
           build=true
           if [ "$sha" = "$last" ] && [ "$FORCE" != true ]; then
             build=false
-            echo "No new commits on $BRANCH since the last nightly ($sha); skipping."
+            echo "No new commits on $SOURCE since the last nightly ($sha); skipping."
           fi
           {
             echo "sha=$sha"
@@ -86,4 +92,4 @@ jobs:
           gh release delete nightly --cleanup-tag --yes 2>/dev/null || true
           # the title carries the version: the update check reads it from there (the tag is always "nightly");
           gh release create nightly dist/* --prerelease --target "$SHA" --title "RawConverter $VERSION" \
-            --notes "Nightly build of \`$BRANCH\` at $SHA ($(date -u '+%Y-%m-%d %H:%M UTC')). Untested; for trying out new features. Nightly installs update themselves to the next nightly."
+            --notes "Nightly build of \`$SOURCE\` at $SHA ($(date -u '+%Y-%m-%d %H:%M UTC')). Untested; for trying out new features. Nightly installs update themselves to the next nightly."
