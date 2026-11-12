@@ -38,8 +38,14 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      # on failure, the end of the output becomes an error annotation (readable without signing in to GitHub);
       - name: Build installer
-        run: packaging/windows/build-installer.sh
+        run: |
+          set -o pipefail
+          packaging/windows/build-installer.sh 2>&1 | tee build.log || {
+            echo "::error title=build-installer.sh failed::$(tail -n 40 build.log | sed -e 's/%/%25/g' -e 's/\r//g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')"
+            exit 1
+          }
       - name: Zip portable build
         run: |
           cd out
@@ -63,7 +69,12 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Build .deb, .rpm, Arch package and tarball
-        run: packaging/linux/build-packages.sh
+        run: |
+          set -o pipefail
+          packaging/linux/build-packages.sh 2>&1 | tee build.log || {
+            echo "::error title=build-packages.sh failed::$(tail -n 40 build.log | sed -e 's/%/%25/g' -e 's/\r//g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')"
+            exit 1
+          }
       - name: Install and run the packages on Ubuntu, Fedora and Arch
         run: |
           docker run --rm -v "$PWD/out:/pkgs:ro" ubuntu:24.04 bash -c \
