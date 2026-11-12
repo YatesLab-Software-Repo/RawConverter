@@ -97,6 +97,10 @@
         <ComboBox Canvas.Left="114" Canvas.Top="66" Width="278" Height="21"
                   ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}"
                   PlaceholderText="Choose the output format..." />
+        <!-- under the format list, which has no free column; independent of the output format; -->
+        <CheckBox Canvas.Left="114" Canvas.Top="109" Content="Pack .d folders into .d.tar" IsChecked="{Binding DTarChecked}"
+                  IsEnabled="{Binding DTarEnabled}"
+                  ToolTip.Tip="Also pack each timsTOF .d folder into a .d.tar archive in the destination directory" />
         <CheckBox Canvas.Left="411" Canvas.Top="57" Content="MS1" IsChecked="{Binding Ms1Checked}" IsEnabled="{Binding Ms1Enabled}" />
         <CheckBox Canvas.Left="490" Canvas.Top="57" Content="MS2" IsChecked="{Binding Ms2Checked}" IsEnabled="{Binding Ms2Enabled}" />
         <CheckBox Canvas.Left="567" Canvas.Top="57" Content="MS3" IsChecked="{Binding Ms3Checked}" IsEnabled="{Binding Ms3Enabled}" />
@@ -105,8 +109,6 @@
         <CheckBox Canvas.Left="567" Canvas.Top="80" Content="mzML" IsChecked="{Binding MzMlChecked}" IsEnabled="{Binding MzMlEnabled}" />
         <CheckBox Canvas.Left="411" Canvas.Top="109" Content="Log" IsChecked="{Binding LogChecked}" IsEnabled="{Binding LogEnabled}" />
         <CheckBox Canvas.Left="490" Canvas.Top="109" Content="mzParquet" IsChecked="{Binding MzParquetChecked}" IsEnabled="{Binding MzParquetEnabled}" />
-        <CheckBox Canvas.Left="567" Canvas.Top="109" Content=".d.tar" IsChecked="{Binding DTarChecked}" IsEnabled="{Binding DTarEnabled}"
-                  ToolTip.Tip="Also pack each timsTOF .d folder into a .d.tar archive in the destination directory" />
       </Canvas>
     </HeaderedContentControl>
 
