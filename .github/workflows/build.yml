@@ -28,9 +28,15 @@ jobs:
       - run: dotnet test RawConverter.sln -c Release
 
   windows:
-    runs-on: ubuntu-latest   # Inno Setup runs in Docker via build-installer.sh, as it does locally
+    # A native Inno Setup on Windows: the Wine in the Inno Setup Docker image (used for local builds on Linux) does not
+    # start on GitHub's Ubuntu runners ("wineserver: socket: Function not implemented").
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash   # Git Bash, so build-installer.sh runs as it does on Linux
     env:
       VERSION: ${{ inputs.version }}
+      ISCC: C:\Program Files (x86)\Inno Setup 6\ISCC.exe
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,6 +44,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path $env:ISCC)) { choco install innosetup --no-progress -y }
+          & $env:ISCC /? | Select-Object -First 1
       # on failure, the end of the output becomes an error annotation (readable without signing in to GitHub);
       - name: Build installer
         run: |
@@ -49,7 +60,7 @@ jobs:
       - name: Zip portable build
         run: |
           cd out
-          zip -qr "RawConverter-$VERSION-win-x64.zip" RawConverter-win-x64 -x '*.so' '*.pdb'
+          7z a -tzip -bso0 "RawConverter-$VERSION-win-x64.zip" RawConverter-win-x64 '-xr!*.so' '-xr!*.pdb'
       - uses: actions/upload-artifact@v4
         with:
           name: windows

@@ -1,5 +1,6 @@
 #!/bin/bash
-# Build the Windows installer (out/RawConverter-<version>-win-x64-setup.exe) on Linux, using Inno Setup in Docker.
+# Build the Windows installer (out/RawConverter-<version>-win-x64-setup.exe): on Linux with Inno Setup in Docker,
+# or with a native Inno Setup when ISCC is set to the path of ISCC.exe (as on GitHub's Windows runners).
 # Publishes the Windows build first, and downloads Microsoft's Visual C++ runtime installer into
 # packaging/windows/cache (not committed).
 # The version comes from Directory.Build.props unless VERSION is set (the release workflow sets it from the tag).
@@ -20,10 +21,15 @@ if [ ! -f "$cache/vc_redist.x64.exe" ]; then
     curl -fsSL -o "$cache/vc_redist.x64.exe" https://aka.ms/vc14/vc_redist.x64.exe
 fi
 
-# The image's Wine prefix belongs to its own user (xclient, uid 1000), so the container runs as that user (not as
-# the caller, e.g. uid 1001 on GitHub's runners: "wine: /home/xclient/.wine is not owned by you"); out/ is made
-# writable for it.
-chmod a+rwx out
-docker run --rm -v "$PWD:/work" -w /work/packaging/windows amake/innosetup:latest \
-    /DAppVersion="$version" RawConverter.iss
+if [ -n "${ISCC:-}" ]; then
+    # Inno Setup installed natively (Windows, e.g. in Git Bash on GitHub's Windows runners): ISCC is the path of
+    # ISCC.exe. MSYS_NO_PATHCONV keeps Git Bash from turning /DAppVersion=... into a file path.
+    (cd packaging/windows && MSYS_NO_PATHCONV=1 "$ISCC" "/DAppVersion=$version" RawConverter.iss)
+else
+    # The image's Wine prefix belongs to its own user (xclient, uid 1000), so the container runs as that user (not
+    # as the caller: "wine: /home/xclient/.wine is not owned by you"); out/ is made writable for it.
+    chmod a+rwx out
+    docker run --rm -v "$PWD:/work" -w /work/packaging/windows amake/innosetup:latest \
+        /DAppVersion="$version" RawConverter.iss
+fi
 ls -l "out/RawConverter-$version-win-x64-setup.exe"
