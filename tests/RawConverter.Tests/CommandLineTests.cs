@@ -95,5 +95,16 @@ namespace RawConverter.Tests
             Assert.True(cl.ShowHelp);
             Assert.Null(cl.Error);
         }
+
+        [Theory]
+        [InlineData("--check_update")]
+        [InlineData("--check-update")]
+        public void CheckUpdateNeedsNoInput(string arg)
+        {
+            CommandLine cl = CommandLine.Parse(new[] { arg });
+
+            Assert.True(cl.CheckUpdate);
+            Assert.Null(cl.Error);
+        }
     }
 }

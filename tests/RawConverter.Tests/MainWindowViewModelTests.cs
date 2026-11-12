@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using RawConverter.Gui.ViewModels;
 using RawConverter.MassSpec;
@@ -255,6 +256,74 @@ namespace RawConverter.Tests
             Assert.Contains(_vm.LogLines, l => l.Contains("ERROR converting"));
         }
 
+        [Fact]
+        public async Task StartupCheckShowsUpdateWithoutDialog()
+        {
+            _vm.UpdateSource = ct => Task.FromResult(new ReleaseInfo("9.9.9", "https://example.org/release"));
+
+            await _vm.CheckForUpdates(false);
+
+            Assert.True(_vm.IsUpdateAvailable);
+            Assert.Equal("Update available: 9.9.9", _vm.UpdateMenuText);
+            Assert.Contains(_vm.LogLines, l => l.Contains("9.9.9") && l.Contains("https://example.org/release"));
+            Assert.Empty(_dialogs.Messages);
+
+            await _vm.OpenUpdatePage();
+            Assert.Equal(new[] { "https://example.org/release" }, _dialogs.OpenedUrls);
+        }
+
+        [Fact]
+        public async Task StartupCheckIsSilentWhenOffline()
+        {
+            _vm.UpdateSource = ct => throw new HttpRequestException("no network");
+
+            await _vm.CheckForUpdates(false);
+
+            Assert.False(_vm.IsUpdateAvailable);
+            Assert.Empty(_dialogs.Messages);
+            Assert.Empty(_vm.LogLines);
+        }
+
+        [Fact]
+        public async Task StartupCheckCanBeTurnedOff()
+        {
+            bool called = false;
+            _vm.UpdateSource = ct =>
+            {
+                called = true;
+                return Task.FromResult<ReleaseInfo>(null);
+            };
+            _vm.CheckForUpdatesAtStartup = false;
+
+            await _vm.CheckForUpdatesAtStartupIfEnabled();
+
+            Assert.False(called);
+        }
+
+        [Fact]
+        public async Task ExplicitCheckOffersDownloadPage()
+        {
+            _vm.UpdateSource = ct => Task.FromResult(new ReleaseInfo("9.9.9", "https://example.org/release"));
+
+            await _vm.CheckForUpdates(true);
+
+            Assert.Contains(_dialogs.Messages, m => m.Contains("9.9.9 is available"));
+            Assert.Equal(new[] { "https://example.org/release" }, _dialogs.OpenedUrls);
+        }
+
+        [Fact]
+        public async Task ExplicitCheckReportsLatestAndErrors()
+        {
+            _vm.UpdateSource = ct => Task.FromResult<ReleaseInfo>(null);
+            await _vm.CheckForUpdates(true);
+            Assert.Contains(_dialogs.Messages, m => m.Contains("is the latest version"));
+
+            _vm.UpdateSource = ct => throw new TaskCanceledException("timed out");
+            await _vm.CheckForUpdates(true);
+            Assert.Contains(_dialogs.Messages, m => m.StartsWith("Could not check for updates"));
+            Assert.Empty(_dialogs.OpenedUrls);
+        }
+
         private class FakeDialogs : IDialogService
         {
             public List<string> Messages { get; } = new List<string>();
@@ -268,7 +337,16 @@ namespace RawConverter.Tests
             public Task<bool> Confirm(string text, string title)
             {
                 Messages.Add(text);
-                return Task.FromResult(true);
+                return Task.FromResult(ConfirmResult);
+            }
+
+            public bool ConfirmResult { get; set; } = true;
+            public List<string> OpenedUrls { get; } = new List<string>();
+
+            public Task OpenUrl(string url)
+            {
+                OpenedUrls.Add(url);
+                return Task.CompletedTask;
             }
         }
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 using RawConverter.Common;
 using RawConverter.MassSpec;
@@ -14,6 +15,7 @@ namespace RawConverter.Cli
         public ConversionOptions Options { get; } = new ConversionOptions();
         public bool ShowHelp { get; private set; }
         public bool ShowVersion { get; private set; }
+        public bool CheckUpdate { get; private set; }
         public bool Quiet { get; private set; }
         public bool Verbose { get; private set; }
         public string Error { get; private set; }
@@ -46,6 +48,10 @@ namespace RawConverter.Cli
                         break;
                     case "version":
                         cl.ShowVersion = true;
+                        break;
+                    case "check_update":
+                    case "check-update":
+                        cl.CheckUpdate = true;
                         break;
                     case "q":
                     case "quiet":
@@ -121,7 +127,7 @@ namespace RawConverter.Cli
                 }
             }
 
-            if (!cl.ShowHelp && !cl.ShowVersion)
+            if (!cl.ShowHelp && !cl.ShowVersion && !cl.CheckUpdate)
             {
                 if (cl.InputFiles.Count == 0)
                 {
@@ -170,6 +176,10 @@ namespace RawConverter.Cli
                 Console.WriteLine("RawConverter " + ConversionRunner.Version);
                 Console.WriteLine(ConversionRunner.BrukerNotice);
                 return 0;
+            }
+            if (cl.CheckUpdate && cl.Error == null)
+            {
+                return CheckUpdate();
             }
             if (cl.Error != null)
             {
@@ -222,6 +232,34 @@ namespace RawConverter.Cli
         }
 
         /// <summary>
+        /// Look up the latest release on GitHub; 0 if the check worked (whether or not there is an update), 1 if not.
+        /// </summary>
+        private static int CheckUpdate()
+        {
+            try
+            {
+                ReleaseInfo update = UpdateChecker.CheckForUpdateAsync().GetAwaiter().GetResult();
+                if (update == null)
+                {
+                    Console.WriteLine("RawConverter " + ConversionRunner.Version + " is the latest version.");
+                }
+                else
+                {
+                    Console.WriteLine("RawConverter " + update.Version + " is available (this is " + ConversionRunner.Version
+                        + "): " + update.Url);
+                }
+                return 0;
+            }
+            catch (Exception e) when (e is System.Net.Http.HttpRequestException || e is TaskCanceledException
+                || e is System.Text.Json.JsonException)
+            {
+                Console.Error.WriteLine("ERROR: could not check for updates (" + e.Message + "). Releases: "
+                    + UpdateChecker.ReleasesPage);
+                return 1;
+            }
+        }
+
+        /// <summary>
         /// Print the usage of this program.
         /// </summary>
         private static void Usage()
@@ -249,6 +287,7 @@ namespace RawConverter.Cli
             Console.WriteLine("\t\t--quiet\tonly print errors.");
             Console.WriteLine("\t\t--verbose\tprint full error details.");
             Console.WriteLine("\t\t--version\tprint the version.");
+            Console.WriteLine("\t\t--check_update\tcheck GitHub for a newer release.");
         }
     }
 

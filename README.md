@@ -70,6 +70,20 @@ On Linux the GUI needs an X11 or XWayland display, plus fontconfig and the basic
 `fontconfig libICE libSM libX11 libXrandr libXi libXcursor`; Ubuntu: `libfontconfig1 libice6 libsm6 libx11-6
 libxrandr2 libxi6 libxcursor1`), which desktop installations already have.
 
+## Update check
+
+At startup the GUI asks GitHub for the latest release
+(`api.github.com/repos/YatesLab-Software-Repo/RawConverter/releases/latest`). If it is newer, an
+"Update available" item appears in the menu bar (it opens the release page) and the log says so; offline, nothing
+happens. The request sends nothing about your files; GitHub sees only your IP address and the RawConverter version.
+Pre-releases are not offered.
+
+- `Help > Check for Updates...` checks on demand; `Help > Check for Updates at Startup` turns the automatic check
+  off (saved in `settings.json` in `%APPDATA%\RawConverter` or `~/.config/RawConverter`).
+- Setting the environment variable `RAWCONVERTER_NO_UPDATE_CHECK=1` turns the automatic check off for everyone on
+  a computer.
+- The command-line tool never checks on its own; `RawConverter --check_update` checks and prints the result.
+
 ## Command line
 
 ```
@@ -83,6 +97,7 @@ RawConverter <input_file> [<input_file> ...] [options]
   --predict_precursors              DIA: predict precursors
   --parallel <n>                    convert n files at the same time (default: 1)
   --quiet / --verbose / --version / --help
+  --check_update                    check GitHub for a newer release (exit code 1 if the check fails)
 ```
 
 For example: `RawConverter sample.raw --ms1 --ms2 --select_mono_prec`
