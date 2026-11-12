@@ -20,6 +20,10 @@ if [ ! -f "$cache/vc_redist.x64.exe" ]; then
     curl -fsSL -o "$cache/vc_redist.x64.exe" https://aka.ms/vc14/vc_redist.x64.exe
 fi
 
-docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" -w /work/packaging/windows amake/innosetup:latest \
+# The image's Wine prefix belongs to its own user (xclient, uid 1000), so the container runs as that user (not as
+# the caller, e.g. uid 1001 on GitHub's runners: "wine: /home/xclient/.wine is not owned by you"); out/ is made
+# writable for it.
+chmod a+rwx out
+docker run --rm -v "$PWD:/work" -w /work/packaging/windows amake/innosetup:latest \
     /DAppVersion="$version" RawConverter.iss
 ls -l "out/RawConverter-$version-win-x64-setup.exe"
