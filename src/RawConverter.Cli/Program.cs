@@ -73,6 +73,10 @@ namespace RawConverter.Cli
                     case "mzparquet":
                         cl.Options.OutputFormats |= OutputFormat.MzParquet;
                         break;
+                    case "tar":
+                    case "d_tar":
+                        cl.Options.OutputFormats |= OutputFormat.DTar;
+                        break;
                     case "log":
                         // accepted for compatibility; the log file was never implemented;
                         break;
@@ -125,7 +129,7 @@ namespace RawConverter.Cli
                 }
                 else if (cl.Options.OutputFormats == OutputFormat.None)
                 {
-                    cl.Error = "No output format given (--ms1, --ms2, --ms3, --mgf, --mzxml or --mzparquet).";
+                    cl.Error = "No output format given (--ms1, --ms2, --ms3, --mgf, --mzxml, --mzparquet or --tar).";
                 }
             }
             return cl;
@@ -236,6 +240,8 @@ namespace RawConverter.Cli
             Console.WriteLine("\t\t--mgf\toutput MGF file.");
             Console.WriteLine("\t\t--mzxml\toutput mzXML file.");
             Console.WriteLine("\t\t--mzparquet\toutput mzParquet file (one row per peak; see README).");
+            Console.WriteLine("\t\t--tar\tpack each timsTOF .d folder into <name>.d.tar (next to the .d, or in --out_folder);");
+            Console.WriteLine("\t\t     \talone it only packs, with other formats it packs and then converts.");
             Console.WriteLine("\t\t--out_folder <dir>\toutput folder (default: next to each input file).");
             Console.WriteLine("\t\t--select_mono_prec\tselect the monoisotopic m/z values of precursors in DDA data.");
             Console.WriteLine("\t\t--predict_precursors\tpredict the precursors for DIA data.");

@@ -27,6 +27,11 @@ namespace RawConverter
         MGF = 8,
         MzXML = 16,
         MzParquet = 32,
+
+        /// <summary>
+        /// Pack a timsTOF .d folder into name.d.tar (only for .d folder input).
+        /// </summary>
+        DTar = 64,
     }
 
     public class ConversionOptions
@@ -202,8 +207,7 @@ namespace RawConverter
 
         private static void ConvertFile(string inFile, ConversionOptions options, TaskProgress progress)
         {
-            string[] outFileTypes = options.OutputFileTypes();
-            if (outFileTypes.Length == 0)
+            if (options.OutputFormats == OutputFormat.None)
             {
                 throw new ArgumentException("No output format selected.");
             }
@@ -217,6 +221,17 @@ namespace RawConverter
             {
                 throw new FileNotFoundException("Input file not found: " + inFile, inFile);
             }
+
+            if (options.OutputFormats.HasFlag(OutputFormat.DTar))
+            {
+                if ((options.OutputFormats & ~OutputFormat.DTar) == OutputFormat.None)
+                {
+                    throw new ArgumentException("Packing into .d.tar only applies to timsTOF .d folders: " + inFile);
+                }
+                Log.Warning("Packing into .d.tar only applies to timsTOF .d folders; skipped for " + inFile);
+            }
+            string[] outFileTypes = options.OutputFileTypes();
+
             if (TimsTofArchive.IsArchive(inFile))
             {
                 ConvertTimsTofArchive(inFile, options, progress);
@@ -339,16 +354,44 @@ namespace RawConverter
             {
                 throw new ArgumentException("timsTOF input can only be converted to MS2, mzXML and mzParquet.");
             }
-            if ((options.OutputFormats & ~supported) != 0)
+            if ((options.OutputFormats & ~supported & ~OutputFormat.DTar) != 0)
             {
                 Log.Warning("timsTOF input only produces MS2, mzXML and mzParquet files; other formats are skipped for " + input);
             }
         }
 
+        /// <summary>
+        /// A .d folder: pack it into name.d.tar if asked (first, so the archive does not pick up the outputs, which
+        /// are written inside the .d by default), then convert it if any conversion output is asked for.
+        /// </summary>
         private static void ConvertTimsTof(string analysisDir, ConversionOptions options, TaskProgress progress)
         {
-            CheckTimsTofOutputFormats(analysisDir, options);
-            ConvertTimsTof(analysisDir, options, progress, options.OutputFolder, 0);
+            bool pack = options.OutputFormats.HasFlag(OutputFormat.DTar);
+            bool convert = (options.OutputFormats & ~OutputFormat.DTar) != OutputFormat.None;
+            if (convert)
+            {
+                CheckTimsTofOutputFormats(analysisDir, options);
+            }
+            if (!TimsTofConverter.IsTimsTofDirectory(analysisDir))
+            {
+                throw new ArgumentException("Not a timsTOF .d folder (needs one .tdf and one .tdf_bin file): " + analysisDir);
+            }
+
+            int packEnd = 0;
+            if (pack)
+            {
+                packEnd = convert ? 30 : 100;
+                if (TimsTofArchive.Create(analysisDir, options.OutputFolder, progress, packEnd) == null)
+                {
+                    return;
+                }
+                if (!convert)
+                {
+                    Log.Info(" Packing finished: " + analysisDir);
+                    return;
+                }
+            }
+            ConvertTimsTof(analysisDir, options, progress, options.OutputFolder, packEnd);
         }
 
         /// <param name="outFolder">null writes inside the .d folder, as the TimsTOF_extractor script did</param>

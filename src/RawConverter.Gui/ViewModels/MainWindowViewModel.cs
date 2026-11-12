@@ -81,6 +81,12 @@ namespace RawConverter.Gui.ViewModels
         [ObservableProperty] private bool _logChecked;
         [ObservableProperty] private bool _logEnabled;
 
+        /// <summary>
+        /// Pack timsTOF .d folders into .d.tar; independent of the output format, and only for .d folder input.
+        /// </summary>
+        [ObservableProperty] private bool _dTarChecked;
+        [ObservableProperty] private bool _dTarEnabled;
+
         // Options menu;
         [ObservableProperty] private int _mzDecimalPlace = 4;
         [ObservableProperty] private int _intensityDecimalPlace = 1;
@@ -113,6 +119,8 @@ namespace RawConverter.Gui.ViewModels
                 OutputFormatIndex = -1;
                 SetOutputChoices(false, false, false, false, false, false, false);
                 SetOutputChecks(false, false, false, false, false, false, false);
+                DTarEnabled = IsFormat(".d");
+                DTarChecked = DTarChecked && DTarEnabled;
             }
         }
 
@@ -364,7 +372,8 @@ namespace RawConverter.Gui.ViewModels
             {
                 return (null, "Threads count only in Numbers!");
             }
-            if (!Ms1Checked && !Ms2Checked && !Ms3Checked && !MgfChecked && !MzXmlChecked && !MzMlChecked && !MzParquetChecked && !LogChecked)
+            if (!Ms1Checked && !Ms2Checked && !Ms3Checked && !MgfChecked && !MzXmlChecked && !MzMlChecked && !MzParquetChecked && !LogChecked
+                && !DTarChecked)
             {
                 return (null, "Please select an output format!");
             }
@@ -392,6 +401,7 @@ namespace RawConverter.Gui.ViewModels
             if (MgfChecked) formats |= OutputFormat.MGF;
             if (MzXmlChecked) formats |= OutputFormat.MzXML;
             if (MzParquetChecked) formats |= OutputFormat.MzParquet;
+            if (DTarChecked && DTarEnabled) formats |= OutputFormat.DTar;
             if (formats == OutputFormat.None)
             {
                 return (null, "Please select an output format!");

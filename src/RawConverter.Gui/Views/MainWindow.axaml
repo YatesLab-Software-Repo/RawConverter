@@ -97,6 +97,8 @@
         <CheckBox Canvas.Left="567" Canvas.Top="80" Content="mzML" IsChecked="{Binding MzMlChecked}" IsEnabled="{Binding MzMlEnabled}" />
         <CheckBox Canvas.Left="411" Canvas.Top="109" Content="Log" IsChecked="{Binding LogChecked}" IsEnabled="{Binding LogEnabled}" />
         <CheckBox Canvas.Left="490" Canvas.Top="109" Content="mzParquet" IsChecked="{Binding MzParquetChecked}" IsEnabled="{Binding MzParquetEnabled}" />
+        <CheckBox Canvas.Left="567" Canvas.Top="109" Content=".d.tar" IsChecked="{Binding DTarChecked}" IsEnabled="{Binding DTarEnabled}"
+                  ToolTip.Tip="Also pack each timsTOF .d folder into a .d.tar archive in the destination directory" />
       </Canvas>
     </HeaderedContentControl>
 

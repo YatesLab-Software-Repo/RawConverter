@@ -137,6 +137,30 @@ namespace RawConverter.Tests
         }
 
         [Fact]
+        public async Task DTarIsOfferedOnlyForTimsTofFolders()
+        {
+            string d = Path.Combine(_dir, "sample.d");
+            Directory.CreateDirectory(d);
+            await _vm.AddInputs(new[] { d });
+
+            Assert.True(_vm.DTarEnabled);
+            _vm.DTarChecked = true;
+            (ConversionOptions options, string error) = _vm.BuildOptions();
+            Assert.Null(error);
+            Assert.Equal(OutputFormat.DTar, options.OutputFormats);
+
+            _vm.OutputFormatIndex = 0;
+            Assert.True(_vm.DTarChecked);
+            Assert.Equal(OutputFormat.DTar | OutputFormat.MS2, _vm.BuildOptions().Options.OutputFormats);
+
+            _vm.SelectedInputFile = d;
+            _vm.RemoveSelectedInput();
+            await _vm.AddInputs(new[] { Path.Combine(_dir, "a.raw") });
+            Assert.False(_vm.DTarEnabled);
+            Assert.False(_vm.DTarChecked);
+        }
+
+        [Fact]
         public async Task RemovingSelectsThePreviousFile()
         {
             await _vm.AddInputs(new[] { "/a.raw", "/b.raw", "/c.raw" });

@@ -65,6 +65,17 @@ namespace RawConverter.Tests
         }
 
         [Theory]
+        [InlineData("--tar")]
+        [InlineData("--d_tar")]
+        public void TarIsAnOutputOnItsOwn(string arg)
+        {
+            CommandLine cl = CommandLine.Parse(new[] { "sample.d", arg });
+
+            Assert.Null(cl.Error);
+            Assert.Equal(OutputFormat.DTar, cl.Options.OutputFormats);
+        }
+
+        [Theory]
         [InlineData("a.raw --ms2 --select_mono_prec --predict_precursors")]
         [InlineData("a.raw")]
         [InlineData("--ms2")]
