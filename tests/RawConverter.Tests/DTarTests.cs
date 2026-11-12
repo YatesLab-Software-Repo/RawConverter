@@ -96,6 +96,41 @@ namespace RawConverter.Tests
             Assert.False(File.Exists(Path.Combine(_dir, "other.tar")));
         }
 
+        [Theory]
+        [InlineData("analysis.tdf", "other.tdf")]
+        [InlineData("analysis.tdf_bin", "other.tdf_bin")]
+        [InlineData("analysis.tdf_bin", null)]
+        public void RequiresAnalysisTdfAndTdfBin(string file, string renameTo)
+        {
+            string path = Path.Combine(_d, file);
+            if (renameTo == null)
+            {
+                File.Delete(path);
+            }
+            else
+            {
+                File.Move(path, Path.Combine(_d, renameTo));
+            }
+
+            Assert.False(ConversionRunner.IsTimsTofInput(_d));
+            foreach (OutputFormat format in new[] { OutputFormat.DTar, OutputFormat.MS2 })
+            {
+                FileConversionResult result = ConversionRunner.ConvertFiles(new[] { _d },
+                    new ConversionOptions { OutputFormats = format })[0];
+                Assert.IsType<ArgumentException>(result.Error);
+                Assert.Contains("analysis.tdf and analysis.tdf_bin", result.Error.Message);
+            }
+            Assert.False(File.Exists(Path.Combine(_dir, "sample.d.tar")));
+        }
+
+        [Fact]
+        public void AnalysisFileNamesAreCaseInsensitive()
+        {
+            File.Move(Path.Combine(_d, "analysis.tdf"), Path.Combine(_d, "Analysis.TDF"));
+
+            Assert.True(ConversionRunner.IsTimsTofInput(_d));
+        }
+
         [Fact]
         public void CancellingLeavesNoArchive()
         {

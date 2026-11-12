@@ -35,11 +35,22 @@ namespace RawConverter.Converter
         private readonly string _mzParquetFile;
         private int _progressStart;
 
+        public const string TdfFileName = "analysis.tdf";
+        public const string TdfBinFileName = "analysis.tdf_bin";
+
+        /// <summary>
+        /// Whether the folder is a timsTOF .d folder: it holds analysis.tdf and analysis.tdf_bin (names compared
+        /// case-insensitively).
+        /// </summary>
         public static bool IsTimsTofDirectory(string path)
         {
-            return Directory.Exists(path)
-                && Directory.GetFiles(path, "*.tdf").Length == 1
-                && Directory.GetFiles(path, "*.tdf_bin").Length == 1;
+            return Directory.Exists(path) && FindFile(path, TdfFileName) != null && FindFile(path, TdfBinFileName) != null;
+        }
+
+        private static string FindFile(string folder, string name)
+        {
+            return Directory.EnumerateFiles(folder)
+                .FirstOrDefault(f => string.Equals(Path.GetFileName(f), name, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <param name="outFolder">null writes the output inside the .d folder, as the script did.</param>
@@ -47,7 +58,8 @@ namespace RawConverter.Converter
             bool writeMzParquet = false)
         {
             _analysisDir = Path.GetFullPath(analysisDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            _tdfFile = Directory.GetFiles(_analysisDir, "*.tdf")[0];
+            _tdfFile = FindFile(_analysisDir, TdfFileName)
+                ?? throw new FileNotFoundException("No " + TdfFileName + " in " + _analysisDir);
 
             // the script names outputs after the folder up to its first '.';
             string name = Path.GetFileName(_analysisDir).Split('.')[0];

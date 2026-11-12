@@ -136,7 +136,7 @@ namespace RawConverter
             ?? typeof(ConversionRunner).Assembly.GetName().Version?.ToString())?.Split('+')[0];
 
         /// <summary>
-        /// Whether the path is a Bruker timsTOF .d folder (one .tdf and one .tdf_bin file).
+        /// Whether the path is a Bruker timsTOF .d folder (it holds analysis.tdf and analysis.tdf_bin).
         /// </summary>
         public static bool IsTimsTofInput(string path)
         {
@@ -374,7 +374,7 @@ namespace RawConverter
             }
             if (!TimsTofConverter.IsTimsTofDirectory(analysisDir))
             {
-                throw new ArgumentException("Not a timsTOF .d folder (needs one .tdf and one .tdf_bin file): " + analysisDir);
+                throw new ArgumentException("Not a timsTOF .d folder (it needs analysis.tdf and analysis.tdf_bin): " + analysisDir);
             }
 
             int packEnd = 0;
@@ -399,7 +399,7 @@ namespace RawConverter
         {
             if (!TimsTofConverter.IsTimsTofDirectory(analysisDir))
             {
-                throw new ArgumentException("Not a timsTOF .d folder (needs one .tdf and one .tdf_bin file): " + analysisDir);
+                throw new ArgumentException("Not a timsTOF .d folder (it needs analysis.tdf and analysis.tdf_bin): " + analysisDir);
             }
             if (!string.IsNullOrEmpty(outFolder))
             {
