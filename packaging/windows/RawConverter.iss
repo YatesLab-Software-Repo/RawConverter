@@ -38,6 +38,7 @@ WizardStyle=modern
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "addtopath"; Description: "Add the RawConverter command-line tool to PATH"; GroupDescription: "Command line:"
+Name: "contextmenu"; Description: "Add ""Convert with RawConverter"" to the right-click menu of .raw files and .d folders"; GroupDescription: "Command line:"
 
 [Files]
 ; Linux libraries and debug symbols are not needed on Windows;
@@ -54,6 +55,42 @@ Name: "{autodesktop}\RawConverter"; Filename: "{app}\RawConverterGUI.exe"; Tasks
 [Registry]
 Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueType: expandsz; \
     ValueName: "Path"; ValueData: "{olddata};{app}"; Tasks: addtopath; Check: NotInPath(ExpandConstant('{app}'))
+
+; Right-click menu (Explorer). Each item runs the command-line tool in a console window, which closes when the
+; conversion succeeds and stays open on an error. Outputs go where the command line puts them by default.
+; .raw uses SystemFileAssociations, so the program that opens .raw files is not changed; .d folders are matched
+; by name with AppliesTo. Reinstalling without the task removes the entries;
+; SystemFileAssociations\.raw: "Convert with RawConverter" submenu;
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter"; ValueType: string; ValueName: "MUIVerb"; ValueData: "Convert with RawConverter"; Flags: uninsdeletekey; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\RawConverterGUI.exe"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter"; ValueType: string; ValueName: "SubCommands"; ValueData: ""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\1ms12"; ValueType: string; ValueName: "MUIVerb"; ValueData: "MS1 and MS2"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\1ms12\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --ms1 --ms2 || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\2ms2"; ValueType: string; ValueName: "MUIVerb"; ValueData: "MS2"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\2ms2\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --ms2 || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\3ms3"; ValueType: string; ValueName: "MUIVerb"; ValueData: "MS3"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\3ms3\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --ms3 || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\4mgf"; ValueType: string; ValueName: "MUIVerb"; ValueData: "MGF"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\4mgf\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --mgf || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\5mzxml"; ValueType: string; ValueName: "MUIVerb"; ValueData: "mzXML"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\5mzxml\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --mzxml || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\6mzparquet"; ValueType: string; ValueName: "MUIVerb"; ValueData: "mzParquet"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter\shell\6mzparquet\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --mzparquet || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\SystemFileAssociations\.raw\shell\RawConverter"; ValueType: none; Flags: deletekey; Tasks: not contextmenu
+; Directory: "Convert with RawConverter" submenu;
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter"; ValueType: string; ValueName: "MUIVerb"; ValueData: "Convert with RawConverter"; Flags: uninsdeletekey; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\RawConverterGUI.exe"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter"; ValueType: string; ValueName: "SubCommands"; ValueData: ""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter"; ValueType: string; ValueName: "AppliesTo"; ValueData: "System.FileName:~>"".d"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter\shell\1ms2"; ValueType: string; ValueName: "MUIVerb"; ValueData: "MS2"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter\shell\1ms2\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --ms2 || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter\shell\2mzxml"; ValueType: string; ValueName: "MUIVerb"; ValueData: "mzXML"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter\shell\2mzxml\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --mzxml || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter\shell\3mzparquet"; ValueType: string; ValueName: "MUIVerb"; ValueData: "mzParquet"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter\shell\3mzparquet\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --mzparquet || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter\shell\4tar"; ValueType: string; ValueName: "MUIVerb"; ValueData: "Pack into .d.tar"; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter\shell\4tar\command"; ValueType: string; ValueName: ""; ValueData: "cmd.exe /c """"{app}\RawConverter.exe"" ""%1"" --tar || pause"""; Tasks: contextmenu
+Root: HKA; Subkey: "Software\Classes\Directory\shell\RawConverter"; ValueType: none; Flags: deletekey; Tasks: not contextmenu
 
 [Run]
 Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; \

@@ -33,6 +33,15 @@ dotnet test RawConverter.sln
 on Linux with Inno Setup in Docker (`amake/innosetup`). It installs the GUI and the CLI (optionally on PATH), the
 license files, and the Microsoft Visual C++ runtime that Bruker's `timsdata.dll` needs, if it is missing.
 
+The installer can also add a **Convert with RawConverter** submenu to Explorer's right-click menu (an installer
+option, on by default): for `.raw` files it offers MS1 and MS2, MS2, MS3, MGF, mzXML and mzParquet; for `.d` folders
+MS2, mzXML, mzParquet and Pack into `.d.tar`. Each item runs the command-line tool on the clicked file in a console
+window, which closes when the conversion succeeds and stays open on an error; outputs go where the command line
+puts them by default (next to a `.raw` file; inside a `.d` folder, or next to it for `.d.tar`). Selecting several
+files runs one conversion per file at the same time. On Windows 11 the submenu is under **Show more options**
+(Shift+F10). The program that opens `.raw` files is not changed. Reinstalling without the option, or uninstalling,
+removes the menu.
+
 `packaging/linux/build-packages.sh` builds the Linux packages with nFPM in Docker (`goreleaser/nfpm`): a `.deb`
 (Debian, Ubuntu), an `.rpm` (Fedora, RHEL, Rocky, Alma) and an Arch package, plus a portable `.tar.gz` for other
 distributions. The packages install into `/opt/rawconverter`, put `rawconverter` and `rawconverter-gui` on PATH and add
