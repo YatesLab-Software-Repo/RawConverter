@@ -61,19 +61,13 @@ so that nightlies are numbered above it.
 
 ### Nightly builds
 
-`.github/workflows/nightly.yml` runs every night at 08:00 UTC. If the source branch has new commits since the last
-nightly, it builds them as `<Version>-nightly.<yyyymmdd>.<run>` (e.g.
+`.github/workflows/nightly.yml` runs every night at 08:00 UTC. If `unify-net10` (the `BRANCH` setting at the top of
+the workflow) has new commits since the last nightly, it builds them as `<Version>-nightly.<yyyymmdd>.<run>` (e.g.
 `1.3.0-nightly.20261112.42`) and replaces the rolling pre-release
 [`nightly`](https://github.com/YatesLab-Software-Repo/RawConverter/releases/tag/nightly): there is always exactly
 one nightly, and its title carries the version. GitHub runs scheduled workflows only from the default branch, so the
 schedule starts once the workflow is on `main`; until then, or to build at once, use Actions -> Nightly -> Run
 workflow (tick "force" to build without new commits).
-
-The source is `unify-net10` unless the repository variable `NIGHTLY_BRANCH` names another branch (Settings ->
-Secrets and variables -> Actions -> Variables; no commit needed), e.g. a dedicated `develop` branch. A manual run can
-also build any branch, tag or commit once (the "ref" box); the next scheduled run goes back to the source branch.
-The version comes from that commit's `Directory.Build.props`, so a nightly built from an older tag is numbered
-below newer nightlies, and installs that already have a newer nightly do not go back to it.
 
 ## GUI
 
