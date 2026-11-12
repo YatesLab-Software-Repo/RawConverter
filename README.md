@@ -53,7 +53,8 @@ Running the workflow by hand from the Actions tab builds the same files as workf
 inputs, `+` accepts timsTOF `.d.tar`/`.tar.gz` archives and `.d` adds timsTOF `.d` folders; files and folders
 can also be dropped on the list. Output goes to the destination directory. Checking `Log` writes the log to a
 `RawConverter_<date>.log` file there. The `mzParquet` output format accepts RAW, mzXML, mzML, MS2 and timsTOF
-input.
+input. For `.d` folders, the `.d.tar` check box packs each folder into a `.d.tar` archive in the destination
+directory, on its own or together with an output format.
 
 On Linux the GUI needs an X11 or XWayland display, plus fontconfig and the basic X11 libraries (RHEL:
 `fontconfig libICE libSM libX11 libXrandr libXi libXcursor`; Ubuntu: `libfontconfig1 libice6 libsm6 libx11-6
@@ -65,7 +66,8 @@ libxrandr2 libxi6 libxcursor1`), which desktop installations already have.
 RawConverter <input_file> [<input_file> ...] [options]
 
   --ms1 --ms2 --ms3 --mgf --mzxml --mzparquet
-                                    output formats (at least one)
+                                    output formats (at least one, or --tar)
+  --tar                             pack each timsTOF .d folder into <name>.d.tar
   --out_folder <dir>                output folder (default: next to each input file)
   --select_mono_prec                DDA: select the monoisotopic precursor m/z
   --predict_precursors              DIA: predict precursors
@@ -107,3 +109,10 @@ written as empty scans.
 A `.d` folder in a tar archive (`sample.d.tar`, `.tar.gz` or `.tgz`) can be passed directly. The `.d` folder is
 extracted next to the archive (an existing one is reused), and the output files are written next to the `.d`
 folder unless `--out_folder` is given. The archive must hold a single top-level `.d` folder.
+
+`--tar` does the reverse: it packs each `.d` folder into `<name>.d.tar` (uncompressed, since `.tdf_bin` is already
+compressed), next to the `.d` folder or in `--out_folder`, replacing an existing archive. On its own it only packs
+(`RawConverter sample.d --tar`); with output formats it packs first and then converts
+(`RawConverter sample.d --tar --ms2`). The whole folder is packed, including any files written into it earlier, and
+the archive is written to a temporary file and renamed when complete. It can be passed back to RawConverter, and
+it extracts with any `tar`.
