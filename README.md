@@ -61,13 +61,14 @@ so that nightlies are numbered above it.
 
 ### Nightly builds
 
-`.github/workflows/nightly.yml` runs every night at 08:00 UTC. If `unify-net10` (the `BRANCH` setting at the top of
-the workflow) has new commits since the last nightly, it builds them as `<Version>-nightly.<yyyymmdd>.<run>` (e.g.
-`1.3.0-nightly.20261112.42`) and replaces the rolling pre-release
-[`nightly`](https://github.com/YatesLab-Software-Repo/RawConverter/releases/tag/nightly): there is always exactly
-one nightly, and its title carries the version. GitHub runs scheduled workflows only from the default branch, so the
-schedule starts once the workflow is on `main`; until then, or to build at once, use Actions -> Nightly -> Run
-workflow (tick "force" to build without new commits).
+`.github/workflows/nightly.yml` updates the nightly on every push to `unify-net10` (the `branches` list at the top
+of the workflow; add or replace branches there) and on every pushed tag that is not a version tag (for example
+`git tag try-new-peaks && git push origin try-new-peaks`; version tags such as `1.3.0` make full releases instead).
+It builds the pushed commit as `<Version>-nightly.<yyyymmdd>.<run>` (e.g. `1.3.0-nightly.20261112.42`) and replaces
+the rolling pre-release [`nightly`](https://github.com/YatesLab-Software-Repo/RawConverter/releases/tag/nightly):
+there is always exactly one nightly, the latest push, and its title carries the version. A newer push cancels the
+build of an older one. Once the workflow is on `main`, Actions -> Nightly -> Run workflow also builds a branch on
+demand (tick "force" to rebuild the current nightly).
 
 ## GUI
 
