@@ -86,6 +86,17 @@ jobs:
           SHA: ${{ needs.check.outputs.sha }}
         run: |
           gh release delete nightly --cleanup-tag --yes 2>/dev/null || true
-          # the title carries the version: the update check reads it from there (the tag is always "nightly");
-          gh release create nightly dist/* --prerelease --target "$SHA" --title "RawConverter $VERSION" \
-            --notes "Nightly build of \`$GITHUB_REF_NAME\` at $SHA ($(date -u '+%Y-%m-%d %H:%M UTC')). Untested; for trying out new features. Nightly installs update themselves to the next nightly."
+          # The title ends with the version: the update check reads it from there (the tag is always "nightly").
+          # Title and notes say plainly that this is not the release most users want.
+          stable="https://github.com/$GH_REPO/releases/latest"
+          cat > notes.md <<EOF
+          > [!WARNING]
+          > **This is a nightly test build, not the stable release.** It is built automatically from every change and may
+          > not work. **Most users should download the latest stable release instead: $stable**
+
+          Nightly build of \`$GITHUB_REF_NAME\` at $SHA ($(date -u '+%Y-%m-%d %H:%M UTC')), for trying out new features
+          before they are released. A nightly installed on Windows updates itself to the next nightly when it starts
+          (Help > Install Nightly Updates Automatically turns this off).
+          EOF
+          gh release create nightly dist/* --prerelease --target "$SHA" \
+            --title "Nightly build for testing (not the stable release): RawConverter $VERSION" --notes-file notes.md

@@ -54,6 +54,15 @@ namespace RawConverter.Tests
         }
 
         [Fact]
+        public void ReadsVersionFromLabelledNightlyTitle()
+        {
+            ReleaseInfo release = UpdateChecker.ParseRelease("{\"tag_name\":\"nightly\",\"name\":\"Nightly build for testing "
+                + "(not the stable release): RawConverter 1.3.0-nightly.20261113.6\",\"html_url\":\"https://x/nightly\"}");
+
+            Assert.Equal("1.3.0-nightly.20261113.6", release.Version);
+        }
+
+        [Fact]
         public async Task NightlyBuildGetsNewerNightly()
         {
             RoutingHandler handler = Routes(stable: "1.2.1", nightly: "1.3.0-nightly.20261113.6");
