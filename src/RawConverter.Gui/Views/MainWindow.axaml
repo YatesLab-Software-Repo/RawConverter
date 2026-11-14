@@ -102,14 +102,15 @@
         <CheckBox Canvas.Left="130" Canvas.Top="109" Content="Pack .d folders into .d.tar" IsChecked="{Binding DTarChecked}"
                   IsEnabled="{Binding DTarEnabled}"
                   ToolTip.Tip="Also pack each timsTOF .d folder into a .d.tar archive in the destination directory" />
-        <CheckBox Canvas.Left="411" Canvas.Top="57" Content="MS1" IsChecked="{Binding Ms1Checked}" IsEnabled="{Binding Ms1Enabled}" />
-        <CheckBox Canvas.Left="490" Canvas.Top="57" Content="MS2" IsChecked="{Binding Ms2Checked}" IsEnabled="{Binding Ms2Enabled}" />
-        <CheckBox Canvas.Left="567" Canvas.Top="57" Content="MS3" IsChecked="{Binding Ms3Checked}" IsEnabled="{Binding Ms3Enabled}" />
-        <CheckBox Canvas.Left="411" Canvas.Top="83" Content="MGF" IsChecked="{Binding MgfChecked}" IsEnabled="{Binding MgfEnabled}" />
-        <CheckBox Canvas.Left="490" Canvas.Top="80" Content="mzXML" IsChecked="{Binding MzXmlChecked}" IsEnabled="{Binding MzXmlEnabled}" />
-        <CheckBox Canvas.Left="567" Canvas.Top="80" Content="mzML" IsChecked="{Binding MzMlChecked}" IsEnabled="{Binding MzMlEnabled}" />
-        <CheckBox Canvas.Left="411" Canvas.Top="109" Content="Log" IsChecked="{Binding LogChecked}" IsEnabled="{Binding LogEnabled}" />
-        <CheckBox Canvas.Left="490" Canvas.Top="109" Content="mzParquet" IsChecked="{Binding MzParquetChecked}" IsEnabled="{Binding MzParquetEnabled}" />
+        <!-- the drop-down chooses the format; only "MS1, MS2, and MS3" has choices, beside it; -->
+        <CheckBox Canvas.Left="411" Canvas.Top="64" Content="MS1" IsChecked="{Binding Ms1Checked}" IsEnabled="{Binding Ms1Enabled}"
+                  IsVisible="{Binding ShowMsLevelChoices}" />
+        <CheckBox Canvas.Left="490" Canvas.Top="64" Content="MS2" IsChecked="{Binding Ms2Checked}" IsEnabled="{Binding Ms2Enabled}"
+                  IsVisible="{Binding ShowMsLevelChoices}" />
+        <CheckBox Canvas.Left="567" Canvas.Top="64" Content="MS3" IsChecked="{Binding Ms3Checked}" IsEnabled="{Binding Ms3Enabled}"
+                  IsVisible="{Binding ShowMsLevelChoices}" />
+        <CheckBox Canvas.Left="411" Canvas.Top="109" Content="Write a log file" IsChecked="{Binding LogChecked}"
+                  IsEnabled="{Binding LogEnabled}" />
       </Canvas>
     </HeaderedContentControl>
 

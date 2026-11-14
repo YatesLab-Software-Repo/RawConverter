@@ -56,7 +56,15 @@ namespace RawConverter.Gui.ViewModels
         [ObservableProperty] private string _selectedInputFile;
         [ObservableProperty] private string _outputDirectory = "";
         [ObservableProperty] private string _threadCountText = "3";
-        [ObservableProperty] private int _outputFormatIndex = -1;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ShowMsLevelChoices))]
+        private int _outputFormatIndex = -1;
+
+        /// <summary>
+        /// The MS1/MS2/MS3 check boxes are shown only for the "MS1, MS2, and MS3" output format; the other formats are
+        /// chosen by the drop-down alone.
+        /// </summary>
+        public bool ShowMsLevelChoices => OutputFormatIndex == 0;
 
         [ObservableProperty] private bool _isDda;
         [ObservableProperty] private bool _isDia;
@@ -310,8 +318,9 @@ namespace RawConverter.Gui.ViewModels
                         DisableOutputs();
                         return IsTimsTofInput ? timsTof : "This option is only availabe for RAW data extraction!";
                     }
-                    SetOutputChoices(true, true, true, true, true, true, true, true);
-                    SetOutputChecks(false, true, false, false, false, false, false);
+                    // every format that can be written (mzML output is not implemented yet);
+                    SetOutputChoices(false, false, false, false, false, false, true);
+                    SetOutputChecks(true, true, true, true, true, false, false, true);
                     return null;
                 default:
                     return null;

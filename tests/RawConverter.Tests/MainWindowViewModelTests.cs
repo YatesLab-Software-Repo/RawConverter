@@ -80,8 +80,23 @@ namespace RawConverter.Tests
         }
 
         [Theory]
+        [InlineData(0, true)]
+        [InlineData(1, false)]
+        [InlineData(2, false)]
+        [InlineData(4, false)]
+        [InlineData(5, false)]
+        public async Task MsLevelChoicesShowOnlyForMs123(int formatIndex, bool shown)
+        {
+            await _vm.AddInputs(new[] { Path.Combine(_dir, "x.raw") });
+
+            _vm.OutputFormatIndex = formatIndex;
+
+            Assert.Equal(shown, _vm.ShowMsLevelChoices);
+        }
+
+        [Theory]
         [InlineData("x.raw", 0, true, true, true, false, false, null)]
-        [InlineData("x.raw", 5, true, true, true, true, true, null)]
+        [InlineData("x.raw", 5, false, false, false, false, false, null)]   // "All": nothing to choose
         [InlineData("x.mzXML", 0, false, true, true, false, false, null)]
         [InlineData("x.ms2", 0, false, false, false, false, false, "The input and the output formats cannot be the same!")]
         [InlineData("x.ms2", 1, false, false, false, false, false, null)]
@@ -203,8 +218,6 @@ namespace RawConverter.Tests
             _vm.IsDia = true;
             _vm.PredictDiaChecked = true;
             _vm.OutputFormatIndex = 5;
-            _vm.Ms1Checked = true;
-            _vm.MgfChecked = true;
             _vm.MzDecimalPlace = 2;
             _vm.ToggleChargeState(2);
             _vm.ToggleChargeState(3);
@@ -214,7 +227,9 @@ namespace RawConverter.Tests
             (ConversionOptions options, string error) = _vm.BuildOptions();
 
             Assert.Null(error);
-            Assert.Equal(OutputFormat.MS1 | OutputFormat.MS2 | OutputFormat.MGF, options.OutputFormats);
+            // "All" writes every format that can be written;
+            Assert.Equal(OutputFormat.MS1 | OutputFormat.MS2 | OutputFormat.MS3 | OutputFormat.MGF | OutputFormat.MzXML
+                | OutputFormat.MzParquet, options.OutputFormats);
             Assert.Equal("/data", options.OutputFolder);
             Assert.Equal(ExperimentType.DIA, options.ExperimentType);
             Assert.True(options.PredictPrecursors);
