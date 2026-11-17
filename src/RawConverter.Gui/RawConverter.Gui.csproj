@@ -4,6 +4,7 @@
     <AssemblyName>RawConverterGUI</AssemblyName>
     <RootNamespace>RawConverter.Gui</RootNamespace>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>Assets/rawconverter.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets/**" />

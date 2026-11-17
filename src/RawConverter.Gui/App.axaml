@@ -9,6 +9,8 @@
     <Style Selector="Window">
       <Setter Property="Background" Value="#F0F0F0" />
       <Setter Property="FontSize" Value="11" />
+      <!-- the Yates Lab icon (spectrum peaks) in every window's title bar and taskbar button; -->
+      <Setter Property="Icon" Value="/Assets/rawconverter.ico" />
     </Style>
     <Style Selector="ListBox">
       <Setter Property="Background" Value="White" />

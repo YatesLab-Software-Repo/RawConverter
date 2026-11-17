@@ -36,6 +36,7 @@ UninstallDisplayIcon={app}\RawConverterGUI.exe
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\..\src\RawConverter.Gui\Assets\rawconverter.ico
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

@@ -3,6 +3,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>RawConverter</AssemblyName>
     <RootNamespace>RawConverter.Cli</RootNamespace>
+    <ApplicationIcon>../RawConverter.Gui/Assets/rawconverter.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../RawConverter.Core/RawConverter.Core.csproj" />
