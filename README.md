@@ -43,6 +43,11 @@ files runs one conversion per file at the same time. Explorer shows the `.d` sub
 (Shift+F10). The program that opens `.raw` files is not changed. Reinstalling without the option, or uninstalling,
 removes the menu.
 
+Running a newer installer updates an existing installation in place (same folder and options). Running an older
+one asks first: "RawConverter X is installed, which is newer than this installer... Continue?" (default No). Silent
+installs (`/SILENT /SUPPRESSMSGBOXES`) refuse to downgrade unless `/ALLOWDOWNGRADE=1` is given. The version
+comparison is in `packaging/windows/VersionCompare.pas` and follows the same rules as the update check.
+
 `packaging/linux/build-packages.sh` builds the Linux packages with nFPM in Docker (`goreleaser/nfpm`): a `.deb`
 (Debian, Ubuntu), an `.rpm` (Fedora, RHEL, Rocky, Alma) and an Arch package, plus a portable `.tar.gz` for other
 distributions. The packages install into `/opt/rawconverter`, put `rawconverter` and `rawconverter-gui` on PATH and add

@@ -11,9 +11,11 @@
   #define RedistDir "cache"
 #endif
 
+; keep the AppId unchanged across versions so upgrades replace the previous installation;
+#define AppGuid "5B8E2F4C-7A3D-4E61-9C2B-0D1F6A8E3B57"
+
 [Setup]
-; keep AppId unchanged across versions so upgrades replace the previous installation;
-AppId={{5B8E2F4C-7A3D-4E61-9C2B-0D1F6A8E3B57}
+AppId={{{#AppGuid}}
 AppName=RawConverter
 AppVersion={#AppVersion}
 AppVerName=RawConverter {#AppVersion}
@@ -100,6 +102,38 @@ Filename: "{app}\RawConverterGUI.exe"; Description: "{cm:LaunchProgram,RawConver
 Filename: "{app}\RawConverterGUI.exe"; Flags: nowait runasoriginaluser; Check: RelaunchRequested
 
 [Code]
+#include "VersionCompare.pas"
+
+// The version of an installed RawConverter, from the uninstall entry Inno Setup writes (its DisplayVersion is the
+// installed AppVersion), or '' if none is installed.
+function InstalledVersion: String;
+var
+  Key: String;
+begin
+  Key := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{' + '{#AppGuid}' + '}_is1';
+  if not RegQueryStringValue(HKLM64, Key, 'DisplayVersion', Result) then
+    if not RegQueryStringValue(HKLM32, Key, 'DisplayVersion', Result) then
+      Result := '';
+end;
+
+// Warn before replacing a newer installed version with this older one (default: No). Silent installs refuse a
+// downgrade unless /ALLOWDOWNGRADE=1 is given (e.g. by IT on purpose); updates from RawConverter are never older.
+function InitializeSetup: Boolean;
+var
+  Installed: String;
+begin
+  Result := True;
+  Installed := InstalledVersion;
+  if (Installed <> '') and (CompareVersions(Installed, '{#AppVersion}') > 0)
+    and (ExpandConstant('{param:ALLOWDOWNGRADE|0}') <> '1') then
+  begin
+    Log('Installed version ' + Installed + ' is newer than ' + '{#AppVersion}');
+    Result := SuppressibleMsgBox(FmtMessage('RawConverter %1 is installed, which is newer than this installer '
+      + '(RawConverter %2).%n%nInstalling will replace it with the older version. Continue?', [Installed, '{#AppVersion}']),
+      mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDNO) = IDYES;
+  end;
+end;
+
 function RelaunchRequested: Boolean;
 begin
   Result := WizardSilent and (ExpandConstant('{param:RELAUNCH|0}') = '1');
