@@ -29,7 +29,10 @@ namespace RawConverter.Gui.ViewModels
     {
         public const string Ms123Format = "MS1, MS2, and MS3";
 
-        public static readonly string[] OutputFormatChoices = { Ms123Format, "MGF", "mzXML", "mzML", "mzParquet", "All" };
+        public const string DTarFormat = "Pack .d folders into .d.tar";
+
+        public static readonly string[] OutputFormatChoices =
+            { Ms123Format, "MGF", "mzXML", "mzML", "mzParquet", DTarFormat, "All" };
 
         private readonly IDialogService _dialogs;
         private CancellationTokenSource _cancellation;
@@ -93,10 +96,9 @@ namespace RawConverter.Gui.ViewModels
         [ObservableProperty] private bool _logEnabled;
 
         /// <summary>
-        /// Pack timsTOF .d folders into .d.tar; independent of the output format, and only for .d folder input.
+        /// Pack timsTOF .d folders into .d.tar: set by the "Pack .d folders into .d.tar" output format (.d input only).
         /// </summary>
         [ObservableProperty] private bool _dTarChecked;
-        [ObservableProperty] private bool _dTarEnabled;
 
         // Options menu;
         [ObservableProperty] private int _mzDecimalPlace = 4;
@@ -130,8 +132,7 @@ namespace RawConverter.Gui.ViewModels
                 OutputFormatIndex = -1;
                 SetOutputChoices(false, false, false, false, false, false, false);
                 SetOutputChecks(false, false, false, false, false, false, false);
-                DTarEnabled = IsFormat(".d");
-                DTarChecked = DTarChecked && DTarEnabled;
+                DTarChecked = false;
             }
         }
 
@@ -253,6 +254,7 @@ namespace RawConverter.Gui.ViewModels
         {
             const string same = "The input and the output formats cannot be the same!";
             const string timsTof = "timsTOF input can only be converted to MS2, mzXML and mzParquet!";
+            DTarChecked = false;
             switch (index)
             {
                 case 0: // MS1, MS2, and MS3;
@@ -312,7 +314,17 @@ namespace RawConverter.Gui.ViewModels
                     SetOutputChoices(false, false, false, false, false, false, true);
                     SetOutputChecks(false, false, false, false, false, false, false, true);
                     return null;
-                case 5: // All;
+                case 5: // Pack .d folders into .d.tar;
+                    if (CurrentInputFormat != null && !IsFormat(".d"))
+                    {
+                        DisableOutputs();
+                        return "Packing into .d.tar only applies to timsTOF .d folders!";
+                    }
+                    SetOutputChoices(false, false, false, false, false, false, true);
+                    SetOutputChecks(false, false, false, false, false, false, false);
+                    DTarChecked = true;
+                    return null;
+                case 6: // All;
                     if (CurrentInputFormat != null && !IsFormat(".RAW"))
                     {
                         DisableOutputs();
@@ -413,7 +425,7 @@ namespace RawConverter.Gui.ViewModels
             if (MgfChecked) formats |= OutputFormat.MGF;
             if (MzXmlChecked) formats |= OutputFormat.MzXML;
             if (MzParquetChecked) formats |= OutputFormat.MzParquet;
-            if (DTarChecked && DTarEnabled) formats |= OutputFormat.DTar;
+            if (DTarChecked) formats |= OutputFormat.DTar;
             if (formats == OutputFormat.None)
             {
                 return (null, "Please select an output format!");

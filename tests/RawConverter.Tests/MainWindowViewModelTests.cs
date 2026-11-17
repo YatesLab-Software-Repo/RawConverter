@@ -85,6 +85,7 @@ namespace RawConverter.Tests
         [InlineData(2, false)]
         [InlineData(4, false)]
         [InlineData(5, false)]
+        [InlineData(6, false)]
         public async Task MsLevelChoicesShowOnlyForMs123(int formatIndex, bool shown)
         {
             await _vm.AddInputs(new[] { Path.Combine(_dir, "x.raw") });
@@ -96,7 +97,7 @@ namespace RawConverter.Tests
 
         [Theory]
         [InlineData("x.raw", 0, true, true, true, false, false, null)]
-        [InlineData("x.raw", 5, false, false, false, false, false, null)]   // "All": nothing to choose
+        [InlineData("x.raw", 6, false, false, false, false, false, null)]   // "All": nothing to choose
         [InlineData("x.mzXML", 0, false, true, true, false, false, null)]
         [InlineData("x.ms2", 0, false, false, false, false, false, "The input and the output formats cannot be the same!")]
         [InlineData("x.ms2", 1, false, false, false, false, false, null)]
@@ -153,27 +154,32 @@ namespace RawConverter.Tests
         }
 
         [Fact]
-        public async Task DTarIsOfferedOnlyForTimsTofFolders()
+        public async Task PackingIsAnOutputFormatForTimsTofFolders()
         {
             string d = Path.Combine(_dir, "sample.d");
             Directory.CreateDirectory(d);
             await _vm.AddInputs(new[] { d });
 
-            Assert.True(_vm.DTarEnabled);
-            _vm.DTarChecked = true;
+            _vm.OutputFormatIndex = Array.IndexOf(MainWindowViewModel.OutputFormatChoices, MainWindowViewModel.DTarFormat);
             (ConversionOptions options, string error) = _vm.BuildOptions();
             Assert.Null(error);
             Assert.Equal(OutputFormat.DTar, options.OutputFormats);
+            Assert.False(_vm.ShowMsLevelChoices);
 
+            // another format replaces packing;
             _vm.OutputFormatIndex = 0;
-            Assert.True(_vm.DTarChecked);
-            Assert.Equal(OutputFormat.DTar | OutputFormat.MS2, _vm.BuildOptions().Options.OutputFormats);
+            Assert.Equal(OutputFormat.MS2, _vm.BuildOptions().Options.OutputFormats);
+        }
 
-            _vm.SelectedInputFile = d;
-            _vm.RemoveSelectedInput();
+        [Fact]
+        public async Task PackingIsRefusedForOtherInput()
+        {
             await _vm.AddInputs(new[] { Path.Combine(_dir, "a.raw") });
-            Assert.False(_vm.DTarEnabled);
-            Assert.False(_vm.DTarChecked);
+
+            _vm.OutputFormatIndex = Array.IndexOf(MainWindowViewModel.OutputFormatChoices, MainWindowViewModel.DTarFormat);
+
+            Assert.Equal("Packing into .d.tar only applies to timsTOF .d folders!", _dialogs.Messages.Single());
+            Assert.Equal("Please select an output format!", _vm.BuildOptions().Error);
         }
 
         [Fact]
@@ -217,7 +223,7 @@ namespace RawConverter.Tests
             await _vm.AddInputs(new[] { "/data/a.raw" });
             _vm.IsDia = true;
             _vm.PredictDiaChecked = true;
-            _vm.OutputFormatIndex = 5;
+            _vm.OutputFormatIndex = 6;   // All
             _vm.MzDecimalPlace = 2;
             _vm.ToggleChargeState(2);
             _vm.ToggleChargeState(3);

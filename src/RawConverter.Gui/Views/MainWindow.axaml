@@ -98,10 +98,6 @@
         <ComboBox Canvas.Left="130" Canvas.Top="66" Width="262" Height="21"
                   ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}"
                   PlaceholderText="Choose the output format..." />
-        <!-- under the format list, which has no free column; independent of the output format; -->
-        <CheckBox Canvas.Left="130" Canvas.Top="109" Content="Pack .d folders into .d.tar" IsChecked="{Binding DTarChecked}"
-                  IsEnabled="{Binding DTarEnabled}"
-                  ToolTip.Tip="Also pack each timsTOF .d folder into a .d.tar archive in the destination directory" />
         <!-- the drop-down chooses the format; only "MS1, MS2, and MS3" has choices, beside it; -->
         <CheckBox Canvas.Left="411" Canvas.Top="64" Content="MS1" IsChecked="{Binding Ms1Checked}" IsEnabled="{Binding Ms1Enabled}"
                   IsVisible="{Binding ShowMsLevelChoices}" />

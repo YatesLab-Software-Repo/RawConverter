@@ -81,8 +81,8 @@ demand (tick "force" to rebuild the current nightly).
 inputs, `+` accepts timsTOF `.d.tar`/`.tar.gz` archives and `.d` adds timsTOF `.d` folders; files and folders
 can also be dropped on the list. Output goes to the destination directory. Checking `Log` writes the log to a
 `RawConverter_<date>.log` file there. The `mzParquet` output format accepts RAW, mzXML, mzML, MS2 and timsTOF
-input. For `.d` folders, the `.d.tar` check box packs each folder into a `.d.tar` archive in the destination
-directory, on its own or together with an output format.
+input. For `.d` folders, the output format "Pack .d folders into .d.tar" packs each folder into a `.d.tar` archive
+in the destination directory (to pack and convert in one run, use the command line: `--tar --ms2`).
 
 On Linux the GUI needs an X11 or XWayland display, plus fontconfig and the basic X11 libraries (RHEL:
 `fontconfig libICE libSM libX11 libXrandr libXi libXcursor`; Ubuntu: `libfontconfig1 libice6 libsm6 libx11-6
