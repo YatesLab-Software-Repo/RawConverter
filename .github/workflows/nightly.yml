@@ -76,6 +76,14 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      # version.json is what installed nightlies check for updates (an ordinary download, not the rate-limited API);
+      - name: Version file
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          installer=$(cd dist && ls -- RawConverter-*-win-x64-setup.exe)
+          printf '{"version": "%s", "tag": "nightly", "installer": "%s"}\n' "$VERSION" "$installer" > dist/version.json
+          cat dist/version.json
       - name: Checksums
         run: cd dist && sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt
       - name: Replace the nightly pre-release

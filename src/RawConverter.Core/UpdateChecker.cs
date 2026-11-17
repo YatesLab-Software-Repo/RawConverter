@@ -59,6 +59,21 @@ namespace RawConverter
             "https://api.github.com/repos/YatesLab-Software-Repo/RawConverter/releases/tags/nightly";
 
         /// <summary>
+        /// version.json of the latest release and of the nightly (written by release.yml and nightly.yml). They are
+        /// ordinary downloads, which are not held to the GitHub API's limit of 60 requests an hour per network
+        /// address, so update checks keep working when many computers share one address. The API is used only for
+        /// releases without the file.
+        /// </summary>
+        public const string LatestVersionFile =
+            "https://github.com/YatesLab-Software-Repo/RawConverter/releases/latest/download/version.json";
+
+        public const string NightlyVersionFile =
+            "https://github.com/YatesLab-Software-Repo/RawConverter/releases/download/nightly/version.json";
+
+        private const string DownloadBase = "https://github.com/YatesLab-Software-Repo/RawConverter/releases/download/";
+        private const string TagPageBase = "https://github.com/YatesLab-Software-Repo/RawConverter/releases/tag/";
+
+        /// <summary>
         /// Whether this is a nightly build ("1.3.0-nightly.20261112.42"); nightly builds also look for newer nightlies.
         /// </summary>
         public static bool IsNightlyBuild => IsNightlyVersion(ConversionRunner.Version);
@@ -110,14 +125,15 @@ namespace RawConverter
             CancellationToken cancellationToken = default)
         {
             ReleaseInfo best = null;
-            List<string> apis = new List<string> { LatestReleaseApi };
+            List<(string File, string Api)> sources = new List<(string, string)> { (LatestVersionFile, LatestReleaseApi) };
             if (IsNightlyVersion(currentVersion))
             {
-                apis.Add(NightlyReleaseApi);
+                sources.Add((NightlyVersionFile, NightlyReleaseApi));
             }
-            foreach (string api in apis)
+            foreach ((string file, string api) in sources)
             {
-                ReleaseInfo release = await GetReleaseAsync(api, handler, cancellationToken).ConfigureAwait(false);
+                ReleaseInfo release = await GetVersionFileAsync(file, handler, cancellationToken).ConfigureAwait(false)
+                    ?? await GetReleaseAsync(api, handler, cancellationToken).ConfigureAwait(false);
                 if (release != null && IsNewer(release.Version, currentVersion)
                     && (best == null || IsNewer(release.Version, best.Version)))
                 {
@@ -155,9 +171,80 @@ namespace RawConverter
             {
                 return null;
             }
+            ThrowIfRateLimited(response);
             response.EnsureSuccessStatusCode();
             string json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             return ParseRelease(json);
+        }
+
+        /// <summary>
+        /// A release from its version.json download, or null if the release has no such file (404).
+        /// </summary>
+        public static async Task<ReleaseInfo> GetVersionFileAsync(string url, HttpMessageHandler handler,
+            CancellationToken cancellationToken = default)
+        {
+            using HttpClient client = handler == null ? new HttpClient() : new HttpClient(handler, false);
+            client.Timeout = Timeout;
+            using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("RawConverter", ConversionRunner.Version ?? "0"));
+
+            using HttpResponseMessage response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            ThrowIfRateLimited(response);
+            response.EnsureSuccessStatusCode();
+            string json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            return ParseVersionFile(json);
+        }
+
+        /// <summary>
+        /// A release from its version.json: {"version": "1.3.0", "tag": "1.3.0", "installer": "RawConverter-...-setup.exe"}.
+        /// </summary>
+        public static ReleaseInfo ParseVersionFile(string json)
+        {
+            using JsonDocument doc = JsonDocument.Parse(json);
+            JsonElement root = doc.RootElement;
+            string version = root.TryGetProperty("version", out JsonElement v) ? v.GetString() : null;
+            string tag = root.TryGetProperty("tag", out JsonElement t) ? t.GetString() : null;
+            string installer = root.TryGetProperty("installer", out JsonElement i) ? i.GetString() : null;
+            if (!TryParse(version, out _, out _) || string.IsNullOrWhiteSpace(tag))
+            {
+                return null;
+            }
+            string tagPath = Uri.EscapeDataString(tag);
+            return new ReleaseInfo(NormalizeVersion(version), TagPageBase + tagPath,
+                string.IsNullOrEmpty(installer) ? null : DownloadBase + tagPath + "/" + Uri.EscapeDataString(installer),
+                DownloadBase + tagPath + "/SHA256SUMS.txt");
+        }
+
+        /// <summary>
+        /// GitHub answers 403 or 429 when the API's limit for this network address is used up; say so, and when it
+        /// resets, instead of a bare status code.
+        /// </summary>
+        private static void ThrowIfRateLimited(HttpResponseMessage response)
+        {
+            if (response.StatusCode != HttpStatusCode.Forbidden && (int)response.StatusCode != 429)
+            {
+                return;
+            }
+            bool limited = (int)response.StatusCode == 429
+                || (response.Headers.TryGetValues("X-RateLimit-Remaining", out IEnumerable<string> remaining)
+                    && remaining.FirstOrDefault() == "0");
+            if (!limited)
+            {
+                return;
+            }
+            string when = "later";
+            if (response.Headers.TryGetValues("X-RateLimit-Reset", out IEnumerable<string> reset)
+                && long.TryParse(reset.FirstOrDefault(), out long resetSeconds))
+            {
+                double minutes = Math.Ceiling((DateTimeOffset.FromUnixTimeSeconds(resetSeconds) - DateTimeOffset.UtcNow).TotalMinutes);
+                when = minutes <= 1 ? "in a minute" : "in " + minutes.ToString("0", CultureInfo.InvariantCulture) + " minutes";
+            }
+            throw new HttpRequestException("GitHub is limiting update checks from this network; try again " + when + ".",
+                null, response.StatusCode);
         }
 
         /// <summary>

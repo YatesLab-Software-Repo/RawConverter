@@ -46,6 +46,15 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      # version.json is what installed copies check for updates (an ordinary download, not the rate-limited API);
+      - name: Version file
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          installer=$(cd dist && ls -- RawConverter-*-win-x64-setup.exe)
+          printf '{"version": "%s", "tag": "%s", "installer": "%s"}\n' "$VERSION" "$TAG" "$installer" > dist/version.json
+          cat dist/version.json
       - name: Checksums
         run: cd dist && sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
