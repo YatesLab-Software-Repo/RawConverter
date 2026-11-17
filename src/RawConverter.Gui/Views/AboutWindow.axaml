@@ -10,7 +10,7 @@
            Stretch="Uniform" />
     <TextBlock Canvas.Left="12" Canvas.Top="176" Text="RawConverter" FontWeight="Bold" />
     <TextBlock Name="VersionText" Canvas.Left="12" Canvas.Top="198" />
-    <TextBlock Canvas.Left="12" Canvas.Top="220" Text="Copyright © 2014 The Scripps Research Institute" />
+    <TextBlock Canvas.Left="12" Canvas.Top="220" Text="Copyright © 2026 The Scripps Research Institute" />
     <TextBlock Name="BrukerText" Canvas.Left="12" Canvas.Top="248" TextWrapping="Wrap" Width="411" />
     <Button Canvas.Left="348" Canvas.Top="295" Width="75" Height="23" Content="OK" IsDefault="True" IsCancel="True"
             Click="OnOk" />
