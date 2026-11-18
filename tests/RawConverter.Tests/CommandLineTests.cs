@@ -34,7 +34,7 @@ namespace RawConverter.Tests
         [Fact]
         public void ParsesMultipleInputsOutFolderAndParallel()
         {
-            CommandLine cl = CommandLine.Parse(new[] { "a.raw", "b.raw", "--ms2", "--out_folder", "out", "--parallel", "3" });
+            CommandLine cl = CommandLine.Parse(new[] { "a.raw", "b.raw", "--ms2", "--out_dir", "out", "--parallel", "3" });
 
             Assert.Null(cl.Error);
             Assert.Equal(new[] { "a.raw", "b.raw" }, cl.InputFiles);
@@ -43,11 +43,20 @@ namespace RawConverter.Tests
         }
 
         [Fact]
+        public void AcceptsOldOutFolderName()
+        {
+            CommandLine cl = CommandLine.Parse(new[] { "a.raw", "--ms2", "--out_folder", "out" });
+
+            Assert.Null(cl.Error);
+            Assert.Equal(System.IO.Path.GetFullPath("out"), cl.Options.OutputFolder);
+        }
+
+        [Fact]
         public void OutFolderResolvesParentOfInput()
         {
             // the right-click menu passes "<name>.d" + separator + ".." so .d outputs land next to the .d folder;
             string dFolder = System.IO.Path.Combine("data", "sample.d");
-            CommandLine cl = CommandLine.Parse(new[] { dFolder, "--ms2", "--out_folder", System.IO.Path.Combine(dFolder, "..") });
+            CommandLine cl = CommandLine.Parse(new[] { dFolder, "--ms2", "--out_dir", System.IO.Path.Combine(dFolder, "..") });
 
             Assert.Null(cl.Error);
             Assert.Equal(System.IO.Path.GetFullPath("data"), cl.Options.OutputFolder);
@@ -90,6 +99,7 @@ namespace RawConverter.Tests
         [InlineData("a.raw --ms2 --select_mono_prec --predict_precursors")]
         [InlineData("a.raw")]
         [InlineData("--ms2")]
+        [InlineData("a.raw --ms2 --out_dir")]
         [InlineData("a.raw --ms2 --out_folder")]
         [InlineData("a.raw --ms2 --parallel 0")]
         [InlineData("a.raw --ms2 --bogus")]

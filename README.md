@@ -39,7 +39,7 @@ The installer can also add a **Convert with RawConverter** submenu to Explorer's
 option, on by default): for `.raw` files it offers MS1 and MS2, MS2, MS3, MGF, mzXML and mzParquet; for `.d` folders
 MS2, mzXML, mzParquet and Pack into `.d.tar`. Each item runs the command-line tool on the clicked file in a console
 window, which closes when the conversion succeeds and stays open on an error; outputs go in the same folder as the
-clicked `.raw` file or `.d` folder (the `.d` items pass `--out_folder` with the folder that holds the `.d`). Selecting several
+clicked `.raw` file or `.d` folder (the `.d` items pass `--out_dir` with the folder that holds the `.d`). Selecting several
 files runs one conversion per file at the same time. Explorer shows the `.d` submenu on any folder whose name ends in `.d`; a folder without
 `analysis.tdf` and `analysis.tdf_bin` is refused with that message (the window stays open). On Windows 11 the submenu is under **Show more options**
 (Shift+F10). The program that opens `.raw` files is not changed. Reinstalling without the option, or uninstalling,
@@ -122,7 +122,7 @@ RawConverter <input_file> [<input_file> ...] [options]
   --ms1 --ms2 --ms3 --mgf --mzxml --mzparquet
                                     output formats (at least one, or --tar)
   --tar                             pack each timsTOF .d folder into <name>.d.tar
-  --out_folder <dir>                output folder (default: next to each input file)
+  --out_dir <dir>                   output folder (default: next to each input file)
   --select_mono_prec                DDA: select the monoisotopic precursor m/z
   --predict_precursors              DIA: predict precursors
   --parallel <n>                    convert n files at the same time (default: 1)
@@ -163,10 +163,10 @@ written as empty scans.
 
 A `.d` folder in a tar archive (`sample.d.tar`, `.tar.gz` or `.tgz`) can be passed directly. The `.d` folder is
 extracted next to the archive (an existing one is reused), and the output files are written next to the `.d`
-folder unless `--out_folder` is given. The archive must hold a single top-level `.d` folder.
+folder unless `--out_dir` is given. The archive must hold a single top-level `.d` folder.
 
 `--tar` does the reverse: it packs each `.d` folder into `<name>.d.tar` (uncompressed, since `.tdf_bin` is already
-compressed), next to the `.d` folder or in `--out_folder`, replacing an existing archive. On its own it only packs
+compressed), next to the `.d` folder or in `--out_dir`, replacing an existing archive. On its own it only packs
 (`RawConverter sample.d --tar`); with output formats it packs first and then converts
 (`RawConverter sample.d --tar --ms2`). The whole folder is packed, including any files written into it earlier, and
 the archive is written to a temporary file and renamed when complete. It can be passed back to RawConverter, and
