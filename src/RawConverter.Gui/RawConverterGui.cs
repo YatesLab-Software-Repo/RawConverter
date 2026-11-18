@@ -4,7 +4,7 @@ using Avalonia.Media;
 
 namespace RawConverter.Gui
 {
-    internal static class Program
+    internal static class RawConverterGui
     {
         [STAThread]
         public static void Main(string[] args)
