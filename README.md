@@ -38,8 +38,8 @@ license files, and the Microsoft Visual C++ runtime that Bruker's `timsdata.dll`
 The installer can also add a **Convert with RawConverter** submenu to Explorer's right-click menu (an installer
 option, on by default): for `.raw` files it offers MS1 and MS2, MS2, MS3, MGF, mzXML and mzParquet; for `.d` folders
 MS2, mzXML, mzParquet and Pack into `.d.tar`. Each item runs the command-line tool on the clicked file in a console
-window, which closes when the conversion succeeds and stays open on an error; outputs go where the command line
-puts them by default (next to a `.raw` file; inside a `.d` folder, or next to it for `.d.tar`). Selecting several
+window, which closes when the conversion succeeds and stays open on an error; outputs go in the same folder as the
+clicked `.raw` file or `.d` folder (the `.d` items pass `--out_folder` with the folder that holds the `.d`). Selecting several
 files runs one conversion per file at the same time. Explorer shows the `.d` submenu on any folder whose name ends in `.d`; a folder without
 `analysis.tdf` and `analysis.tdf_bin` is refused with that message (the window stays open). On Windows 11 the submenu is under **Show more options**
 (Shift+F10). The program that opens `.raw` files is not changed. Reinstalling without the option, or uninstalling,

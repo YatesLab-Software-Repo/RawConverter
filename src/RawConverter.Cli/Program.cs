@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,7 +93,8 @@ namespace RawConverter.Cli
                             cl.Error = "--out_folder requires a folder.";
                             return cl;
                         }
-                        cl.Options.OutputFolder = args[i];
+                        // GetFullPath resolves "..", which the right-click menu uses for .d folders;
+                        cl.Options.OutputFolder = Path.GetFullPath(args[i]);
                         break;
                     case "parallel":
                         if (++i >= args.Count || !int.TryParse(args[i], out int parallel) || parallel < 1)

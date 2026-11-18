@@ -38,8 +38,19 @@ namespace RawConverter.Tests
 
             Assert.Null(cl.Error);
             Assert.Equal(new[] { "a.raw", "b.raw" }, cl.InputFiles);
-            Assert.Equal("out", cl.Options.OutputFolder);
+            Assert.Equal(System.IO.Path.GetFullPath("out"), cl.Options.OutputFolder);
             Assert.Equal(3, cl.Options.MaxParallelFiles);
+        }
+
+        [Fact]
+        public void OutFolderResolvesParentOfInput()
+        {
+            // the right-click menu passes "<name>.d" + separator + ".." so .d outputs land next to the .d folder;
+            string dFolder = System.IO.Path.Combine("data", "sample.d");
+            CommandLine cl = CommandLine.Parse(new[] { dFolder, "--ms2", "--out_folder", System.IO.Path.Combine(dFolder, "..") });
+
+            Assert.Null(cl.Error);
+            Assert.Equal(System.IO.Path.GetFullPath("data"), cl.Options.OutputFolder);
         }
 
         [Fact]
