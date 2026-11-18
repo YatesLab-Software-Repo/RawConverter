@@ -24,7 +24,8 @@ AppPublisherURL=https://github.com/YatesLab-Software-Repo/RawConverter
 DefaultDirName={autopf}\RawConverter
 DefaultGroupName=RawConverter
 DisableProgramGroupPage=yes
-LicenseFile=..\..\LICENSE
+; NOTICE and the Apache License's terms, without LICENSE's template appendix; written by build-installer.sh;
+LicenseFile={#RedistDir}\License.txt
 OutputBaseFilename=RawConverter-{#AppVersion}-win-x64-setup
 OutputDir=..\..\out
 ArchitecturesAllowed=x64compatible

@@ -17,6 +17,15 @@ for project in src/RawConverter.Cli/RawConverter.Cli.csproj src/RawConverter.Gui
 done
 
 mkdir -p "$cache"
+# The license page: NOTICE (the copyright and third-party notices), then the Apache License's terms. LICENSE's
+# appendix, how to apply the license with a "Copyright {yyyy} {name of copyright owner}" template, is left out.
+# CRLF line endings for Windows.
+{
+    cat NOTICE
+    printf '\n\n'
+    sed '/END OF TERMS AND CONDITIONS/q' LICENSE
+} | tr -d '\r' | sed 's/$/\r/' > "$cache/License.txt"
+
 if [ ! -f "$cache/vc_redist.x64.exe" ]; then
     curl -fsSL -o "$cache/vc_redist.x64.exe" https://aka.ms/vc14/vc_redist.x64.exe
 fi
