@@ -10,10 +10,11 @@ priority: optional
 maintainer: Yates Lab, The Scripps Research Institute <noreply@github.com>
 vendor: Yates Lab, The Scripps Research Institute
 homepage: https://github.com/YatesLab-Software-Repo/RawConverter
-license: See /opt/rawconverter/LICENSE and /opt/rawconverter/Licenses
+license: Apache-2.0
 description: |
-  Converts mass spectrometry data files (Thermo .raw, Bruker timsTOF .d, mzML, mzXML)
-  to MS1, MS2, MGF, mzXML, mzML and mzParquet.
+  Converts mass spectrometry data files (Thermo .raw, Bruker timsTOF .d, mzML, mzXML, MS2, MGF)
+  to MS1, MS2, MS3, MGF, mzXML and mzParquet. Bundled third-party components keep their own
+  licenses (/opt/rawconverter/Licenses).
   Provides the rawconverter command-line tool and the rawconverter-gui desktop application.
 
 contents:
