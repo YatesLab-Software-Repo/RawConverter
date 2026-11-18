@@ -478,14 +478,16 @@ namespace RawConverter.Gui.ViewModels
             Directory.CreateDirectory(options.OutputFolder);
 
             List<string> files = InputFiles.ToList();
-            int[] percents = new int[files.Count];
-            FileProcessingLabel = "File 1 / " + files.Count + ":";
+            // progress weighted by input size, and the time left for all files;
+            BatchProgress batch = new BatchProgress(files);
+            FileProcessingLabel = "File 1 / " + files.Count + ":   " + BatchProgress.FormatRemaining(null);
             UiProgress progress = new UiProgress(p =>
             {
-                percents[p.FileIndex] = p.Percent;
-                ProgressPercent = (int)percents.Average();
-                int current = Math.Min(files.Count, percents.Count(x => x >= 100) + 1);
-                FileProcessingLabel = "File " + current + " / " + files.Count + ":";
+                batch.Report(p.FileIndex, p.Percent);
+                ProgressPercent = batch.Percent;
+                int current = Math.Min(files.Count, batch.FilesDone + 1);
+                FileProcessingLabel = "File " + current + " / " + files.Count + ":   "
+                    + (batch.FilesDone < files.Count ? BatchProgress.FormatRemaining(batch.Remaining) : "finishing...");
             });
 
             _cancellation = new CancellationTokenSource();
@@ -512,6 +514,9 @@ namespace RawConverter.Gui.ViewModels
             {
                 LogLines.Add(" ERROR converting " + result.InputFile + ": " + result.Error?.Message);
             }
+            LogLines.Add(" Finished in " + BatchProgress.FormatDuration(batch.Elapsed) + ".");
+            FileProcessingLabel = "File " + files.Count + " / " + files.Count + ":   done in "
+                + BatchProgress.FormatDuration(batch.Elapsed);
             if (LogChecked)
             {
                 WriteLogFile(options.OutputFolder);
