@@ -7,7 +7,7 @@ version: ${VERSION}
 version_schema: semver
 section: science
 priority: optional
-maintainer: Yates Lab, The Scripps Research Institute <noreply@github.com>
+maintainer: Yates Lab, The Scripps Research Institute <titusj@scripps.edu>
 vendor: Yates Lab, The Scripps Research Institute
 homepage: https://github.com/YatesLab-Software-Repo/RawConverter
 license: Apache-2.0
