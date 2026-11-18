@@ -6,7 +6,7 @@ using Avalonia.Layout;
 namespace RawConverter.Gui.Views
 {
     /// <summary>
-    /// A WinForms-style MessageBox: OK, or Yes/No.
+    /// A message box: OK, or Yes/No.
     /// </summary>
     internal class MessageBoxWindow : Window
     {

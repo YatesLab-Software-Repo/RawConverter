@@ -23,7 +23,7 @@ namespace RawConverter.Gui.ViewModels
     }
 
     /// <summary>
-    /// State and behaviour of the main window, ported from the WinForms RawConverterGUI.
+    /// State and behaviour of the main window.
     /// </summary>
     /// <summary>
     /// One entry of the output-format drop-down; a disabled entry is greyed out and cannot be chosen.
@@ -60,7 +60,7 @@ namespace RawConverter.Gui.ViewModels
             _dialogs = dialogs;
             DTarChoice.IsEnabled = false;   // until .d folders are added;
 
-            // initial state of the legacy window;
+            // initial state of the window;
             IsDda = true;
             MassCorrectionEnabled = true;
             MassCorrectionChecked = false;
@@ -405,7 +405,7 @@ namespace RawConverter.Gui.ViewModels
         }
 
         /// <summary>
-        /// Validate the settings the way the legacy Go! button did; returns null and the error message, or
+        /// Validate the settings for the Go! button; returns null and the error message, or
         /// the conversion options.
         /// </summary>
         public (ConversionOptions Options, string Error) BuildOptions()

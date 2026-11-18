@@ -29,7 +29,7 @@ namespace RawConverter.Tests
         }
 
         [Fact]
-        public void StartsLikeTheLegacyWindow()
+        public void StartsWithTheDefaultOptions()
         {
             Assert.True(_vm.IsDda);
             Assert.False(_vm.IsDia);
@@ -106,7 +106,7 @@ namespace RawConverter.Tests
         [InlineData("x.d.tar", 1, false, false, false, false, false, "timsTOF input can only be converted to MS2, mzXML and mzParquet!")]
         [InlineData("x.d.tar", 2, false, false, false, false, false, null)]
         [InlineData("x.d.tar", 3, false, false, false, false, false, "timsTOF input can only be converted to MS2, mzXML and mzParquet!")]
-        public async Task OutputChoicesFollowTheLegacyRules(string input, int formatIndex,
+        public async Task OutputChoicesFollowTheInputRules(string input, int formatIndex,
             bool ms1, bool ms2, bool ms3, bool mgf, bool mzXml, string warning)
         {
             await _vm.AddInputs(new[] { Path.Combine(_dir, input) });

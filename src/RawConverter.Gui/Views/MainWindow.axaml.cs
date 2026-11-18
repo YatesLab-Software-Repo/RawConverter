@@ -66,7 +66,7 @@ namespace RawConverter.Gui.Views
         }
 
         /// <summary>
-        /// The Options menu: decimal places and charge states as in the legacy menus, which stay open while
+        /// The Options menu: decimal places and charge states, in menus that stay open while
         /// choices are toggled.
         /// </summary>
         private void BuildOptionsMenu()

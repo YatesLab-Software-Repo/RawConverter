@@ -5,7 +5,7 @@
   <Application.Styles>
     <SimpleTheme />
 
-    <!-- Classic Windows Forms look: grey dialog background, 11px text. -->
+    <!-- Classic desktop look: grey dialog background, 11px text. -->
     <Style Selector="Window">
       <Setter Property="Background" Value="#F0F0F0" />
       <Setter Property="FontSize" Value="11" />
@@ -42,8 +42,8 @@
       <Setter Property="Background" Value="#F5F5F5" />
     </Style>
 
-    <!-- A WinForms GroupBox: a thin frame with the header drawn over its top edge; the content is
-         positioned from the box's top-left corner, as in WinForms. -->
+    <!-- A group box: a thin frame with the header drawn over its top edge; the content is positioned from the
+         box's top-left corner. -->
     <Style Selector="HeaderedContentControl.groupbox">
       <Setter Property="Template">
         <ControlTemplate>

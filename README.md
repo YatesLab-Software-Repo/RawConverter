@@ -11,8 +11,7 @@ with .NET 10, using Thermo's RawFileReader library (no Wine or MSFileReader need
 |---|---|
 | `src/RawConverter.Core` | Conversion library shared by all front ends |
 | `src/RawConverter.Cli` | Command-line tool (`RawConverter`) |
-| `src/RawConverter.Gui` | Desktop GUI (`RawConverterGUI`, Avalonia), a copy of the legacy WinForms window |
-| `src/RawConverter` | Legacy .NET Framework 4 / WinForms version, kept as the reference for the GUI port (not built) |
+| `src/RawConverter.Gui` | Desktop GUI (`RawConverterGUI`, Avalonia) for Windows and Linux |
 | `tests/RawConverter.Tests` | Unit tests and data-driven regression tests (see `tests/README.md`) |
 | `ThermoPkg` | Thermo RawFileReader NuGet packages (not on nuget.org; see `Licenses/Thermo`) |
 | `Licenses` | License terms for the Thermo, Bruker and Parquet.Net components |
@@ -77,9 +76,9 @@ demand (tick "force" to rebuild the current nightly).
 
 ## GUI
 
-`RawConverterGUI` reproduces the legacy WinForms window and menus on Windows and Linux. Besides the legacy
-inputs, `+` accepts timsTOF `.d.tar`/`.tar.gz` archives and `.d` adds timsTOF `.d` folders; files and folders
-can also be dropped on the list. Output goes to the destination directory. Checking `Log` writes the log to a
+`RawConverterGUI` is the desktop application, built with Avalonia, for Windows and Linux. Besides Thermo `.raw`,
+mzXML, mzML, MS2 and MGF files, `+` accepts timsTOF `.d.tar`/`.tar.gz` archives and `.d` adds timsTOF `.d` folders; files and folders
+can also be dropped on the list. Output goes to the destination directory. Checking "Write a log file" writes the log to a
 `RawConverter_<date>.log` file there. The `mzParquet` output format accepts RAW, mzXML, mzML, MS2 and timsTOF
 input. For `.d` folders, the output format "Pack .d folders into .d.tar" packs each folder into a `.d.tar` archive
 in the destination directory (to pack and convert in one run, use the command line: `--tar --ms2`).

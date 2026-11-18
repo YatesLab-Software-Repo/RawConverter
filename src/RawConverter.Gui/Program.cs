@@ -17,7 +17,7 @@ namespace RawConverter.Gui
             return AppBuilder.Configure<App>()
                 .UsePlatformDetect()
                 .WithInterFont()
-                // the same font on every platform, so the fixed WinForms-style layout looks alike everywhere;
+                // the same font on every platform, so the fixed layout looks alike everywhere;
                 .With(new FontManagerOptions { DefaultFamilyName = "fonts:Inter#Inter" })
                 .LogToTrace();
         }
