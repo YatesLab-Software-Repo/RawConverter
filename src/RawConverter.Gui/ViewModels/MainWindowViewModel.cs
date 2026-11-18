@@ -584,7 +584,7 @@ namespace RawConverter.Gui.ViewModels
         public bool CanInstallUpdates { get; set; } = UpdateChecker.CanInstallUpdates;
 
         /// <summary>
-        /// Whether this is a nightly build, which installs newer nightlies at startup.
+        /// Whether this is a nightly build, which is also offered newer nightlies.
         /// </summary>
         public bool IsNightlyBuild { get; set; } = UpdateChecker.IsNightlyBuild;
 
@@ -592,9 +592,6 @@ namespace RawConverter.Gui.ViewModels
         /// Raised when an update installer has started and RawConverter should close.
         /// </summary>
         public event Action ExitRequested;
-
-        /// <summary>Help > Install Nightly Updates Automatically (nightly builds; saved by the window).</summary>
-        [ObservableProperty] private bool _installNightlyUpdatesAutomatically = true;
 
         private string _downloadedInstaller;
 
@@ -651,11 +648,8 @@ namespace RawConverter.Gui.ViewModels
             AddLogLine("RawConverter " + update.Version + " is available: " + update.Url);
             if (!userInitiated)
             {
-                // a nightly build keeps itself on the latest nightly without asking;
-                if (IsNightlyBuild && InstallNightlyUpdatesAutomatically && CanInstall(update))
-                {
-                    await InstallUpdate(update, false);
-                }
+                // nothing is installed without asking, for nightly and release builds alike: the check at startup
+                // only shows "Update available";
                 return;
             }
             await OfferUpdate(update, "RawConverter " + update.Version + " is available (this is " + ConversionRunner.Version + ").");

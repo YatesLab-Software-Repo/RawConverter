@@ -97,12 +97,11 @@ happens. The request sends nothing about your files; GitHub sees only your IP ad
 Pre-releases are not offered.
 
 **Nightly installs** (installed from a nightly installer) also look at the `nightly` release, and are offered the
-next nightly or a newer release, whichever is newer. On Windows, a nightly installed with the installer updates
-itself at startup: it downloads the new installer, checks it against the release's `SHA256SUMS.txt`, runs it
-silently (Windows asks for administrator rights) and reopens when it is done. It never installs during a
-conversion. `Help > Install Nightly Updates Automatically` turns this off. Release builds ask first: on Windows,
-"Update available" and `Help > Check for Updates...` offer to install the update the same way. Portable copies and
-Linux packages are told about updates but do not install them.
+next nightly or a newer release, whichever is newer. Nothing is installed without asking, for nightly and release
+builds alike: on Windows, choosing "Update available" (or `Help > Check for Updates...`) offers to install the
+update; RawConverter then downloads the installer, checks it against the release's `SHA256SUMS.txt`, runs it
+(Windows asks for administrator rights) and reopens when it is done. It never installs during a conversion.
+Portable copies and Linux packages are told about updates but do not install them.
 
 - `Help > Check for Updates...` checks on demand; `Help > Check for Updates at Startup` turns the automatic check
   off (saved in `settings.json` in `%APPDATA%\RawConverter` or `~/.config/RawConverter`).

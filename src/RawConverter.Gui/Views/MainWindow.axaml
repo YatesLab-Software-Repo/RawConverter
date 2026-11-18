@@ -36,7 +36,6 @@
       <MenuItem Header="Help">
         <MenuItem Header="Check for Updates..." Click="OnCheckForUpdates" />
         <MenuItem Name="CheckUpdatesAtStartupMenu" Header="Check for Updates at Startup" ToggleType="CheckBox" />
-        <MenuItem Name="AutoInstallNightlyMenu" Header="Install Nightly Updates Automatically" ToggleType="CheckBox" />
         <Separator />
         <MenuItem Header="About RawConverter" Click="OnAbout" />
       </MenuItem>

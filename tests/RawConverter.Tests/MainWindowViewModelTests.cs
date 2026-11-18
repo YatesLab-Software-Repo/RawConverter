@@ -367,39 +367,33 @@ namespace RawConverter.Tests
             return events;
         }
 
-        [Fact]
-        public async Task NightlyBuildInstallsNewerNightlyAtStartup()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task StartupCheckOnlyAnnouncesUpdate(bool nightlyBuild)
         {
-            List<string> events = UseFakeInstaller(true);
+            List<string> events = UseFakeInstaller(nightlyBuild);
 
             await _vm.CheckForUpdatesAtStartupIfEnabled();
 
+            Assert.Empty(events);                 // nothing downloaded or installed
+            Assert.Empty(_dialogs.Messages);      // and nothing asked
+            Assert.True(_vm.IsUpdateAvailable);   // "Update available" in the menu bar
+            Assert.Contains(_vm.LogLines, l => l.Contains("9.9.9-nightly.20991231.1 is available"));
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task UpdateAvailableInstallsAfterConfirmation(bool nightlyBuild)
+        {
+            List<string> events = UseFakeInstaller(nightlyBuild);
+            await _vm.CheckForUpdatesAtStartupIfEnabled();
+
+            await _vm.ApplyAvailableUpdate();
+
+            Assert.Contains(_dialogs.Messages, m => m.Contains("Install it now?"));
             Assert.Equal(new[] { "download 9.9.9-nightly.20991231.1", "start " + FakeInstaller, "exit" }, events);
-            Assert.Empty(_dialogs.Messages);
-            Assert.Contains(_vm.LogLines, l => l.StartsWith("Installing RawConverter 9.9.9-nightly"));
-        }
-
-        [Fact]
-        public async Task ReleaseBuildDoesNotInstallAtStartup()
-        {
-            List<string> events = UseFakeInstaller(false);
-
-            await _vm.CheckForUpdatesAtStartupIfEnabled();
-
-            Assert.Empty(events);
-            Assert.True(_vm.IsUpdateAvailable);
-        }
-
-        [Fact]
-        public async Task AutomaticNightlyInstallCanBeTurnedOff()
-        {
-            List<string> events = UseFakeInstaller(true);
-            _vm.InstallNightlyUpdatesAutomatically = false;
-
-            await _vm.CheckForUpdatesAtStartupIfEnabled();
-
-            Assert.Empty(events);
-            Assert.True(_vm.IsUpdateAvailable);
         }
 
         [Fact]
@@ -408,7 +402,7 @@ namespace RawConverter.Tests
             List<string> events = UseFakeInstaller(true);
             _vm.IsRunning = true;
 
-            await _vm.CheckForUpdatesAtStartupIfEnabled();
+            await _vm.CheckForUpdates(true);
             Assert.Equal(new[] { "download 9.9.9-nightly.20991231.1" }, events);
 
             // when the conversion has finished, the menu item installs the downloaded installer;
@@ -422,10 +416,10 @@ namespace RawConverter.Tests
         {
             List<string> events = UseFakeInstaller(true, () => throw new InvalidDataException("checksum mismatch"));
 
-            await _vm.CheckForUpdatesAtStartupIfEnabled();
+            await _vm.CheckForUpdates(true);
 
             Assert.DoesNotContain("exit", events);
-            Assert.Contains(_vm.LogLines, l => l.Contains("checksum mismatch"));
+            Assert.Contains(_dialogs.Messages, m => m.Contains("checksum mismatch"));
         }
 
         [Fact]

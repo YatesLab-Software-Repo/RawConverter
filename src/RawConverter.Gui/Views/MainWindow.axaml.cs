@@ -35,7 +35,6 @@ namespace RawConverter.Gui.Views
             _vm = new MainWindowViewModel(this);
             DataContext = _vm;
             _vm.CheckForUpdatesAtStartup = _settings.CheckForUpdatesAtStartup;
-            _vm.InstallNightlyUpdatesAutomatically = _settings.InstallNightlyUpdatesAutomatically;
             _vm.ExitRequested += Close;
 
             BuildOptionsMenu();
@@ -81,14 +80,6 @@ namespace RawConverter.Gui.Views
             AddToggle(ShowPeakResolutionMenu, () => _vm.ShowPeakResolution, v => _vm.ShowPeakResolution = v);
             AddToggle(ExportChargeStateMenu, () => _vm.ExportChargeState, v => _vm.ExportChargeState = v);
             AddToggle(BypassThermoMenu, () => _vm.BypassThermoAlgorithm, v => _vm.BypassThermoAlgorithm = v);
-            // only nightly builds that can install updates themselves have this choice;
-            AutoInstallNightlyMenu.IsVisible = _vm.IsNightlyBuild && _vm.CanInstallUpdates;
-            AddToggle(AutoInstallNightlyMenu, () => _vm.InstallNightlyUpdatesAutomatically, v =>
-            {
-                _vm.InstallNightlyUpdatesAutomatically = v;
-                _settings.InstallNightlyUpdatesAutomatically = v;
-                _settings.Save();
-            });
             AddToggle(CheckUpdatesAtStartupMenu, () => _vm.CheckForUpdatesAtStartup, v =>
             {
                 _vm.CheckForUpdatesAtStartup = v;

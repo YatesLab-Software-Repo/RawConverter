@@ -1,7 +1,7 @@
 # Nightly builds: every push to the branches below, and every pushed tag that is not a version tag, is built as
 # <version>-nightly.<yyyymmdd>.<run> and replaces the rolling "nightly" pre-release on GitHub
 # (https://github.com/YatesLab-Software-Repo/RawConverter/releases/tag/nightly).
-# Nightly installs of RawConverter check that release and update themselves (see README, "Update check").
+# Nightly installs of RawConverter check that release and offer its updates (see README, "Update check").
 # Version tags (1.3.0, v1.3.0) make full releases through release.yml instead.
 name: Nightly
 
@@ -103,8 +103,8 @@ jobs:
           > not work. **Most users should download the latest stable release instead: $stable**
 
           Nightly build of \`$GITHUB_REF_NAME\` at $SHA ($(date -u '+%Y-%m-%d %H:%M UTC')), for trying out new features
-          before they are released. A nightly installed on Windows updates itself to the next nightly when it starts
-          (Help > Install Nightly Updates Automatically turns this off).
+          before they are released. A nightly installed on Windows shows "Update available" when a newer nightly is
+          published, and installs it when you choose that.
           EOF
           gh release create nightly dist/* --prerelease --target "$SHA" \
             --title "Nightly build for testing (not the stable release): RawConverter $VERSION" --notes-file notes.md
