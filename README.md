@@ -16,7 +16,10 @@ with .NET 10, using Thermo's RawFileReader library (no Wine or MSFileReader need
 | `ThermoPkg` | Thermo RawFileReader NuGet packages (not on nuget.org; see `Licenses/Thermo`) |
 | `Licenses` | License terms for the Thermo, Bruker and Parquet.Net components |
 | `src/RawConverter.Core/native` | Native libraries: lpsolve, and Bruker's TDF SDK (`timsdata`) for timsTOF input |
+| `packaging/windows` | Windows installer (Inno Setup script and build script) |
+| `packaging/linux` | Linux packages (`.deb`, `.rpm`, Arch, `.tar.gz`) built with nFPM |
 | `packaging/singularity` | Container definition for hosts too old for .NET 10, such as CentOS 7 |
+| `.github/workflows` | Builds, releases and nightly builds on GitHub Actions |
 
 ## Build
 
@@ -89,10 +92,13 @@ libxrandr2 libxi6 libxcursor1`), which desktop installations already have.
 
 ## Update check
 
-At startup the GUI asks GitHub for the latest release
-(`api.github.com/repos/YatesLab-Software-Repo/RawConverter/releases/latest`). If it is newer, an
-"Update available" item appears in the menu bar (it opens the release page) and the log says so; offline, nothing
-happens. The request sends nothing about your files; GitHub sees only your IP address and the RawConverter version.
+At startup the GUI downloads the latest release's `version.json`
+(`github.com/YatesLab-Software-Repo/RawConverter/releases/latest/download/version.json`, written by the release
+workflow). This is an ordinary download, not held to the GitHub API's limit of 60 requests an hour per network
+address, so the check keeps working when many computers share one address; the API
+(`api.github.com/repos/YatesLab-Software-Repo/RawConverter/releases/latest`) is asked only for releases without the
+file. If the release is newer, an "Update available" item appears in the menu bar (it opens the release page) and
+the log says so; offline, nothing happens. The request sends nothing about your files; GitHub sees only your IP address and the RawConverter version.
 Pre-releases are not offered.
 
 **Nightly installs** (installed from a nightly installer) also look at the `nightly` release, and are offered the
