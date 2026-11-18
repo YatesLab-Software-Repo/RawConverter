@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Text.Json;
 using RawConverter.Cli;
 using Xunit;
@@ -58,7 +59,8 @@ namespace RawConverter.Tests
 
         /// <summary>
         /// SHA-256 of an output file with run-specific content removed: creation/conversion dates, the input
-        /// folder path, and mzXML byte offsets and checksums (which shift with the path length).
+        /// folder path, mzXML byte offsets and checksums (which shift with the path length), and RawConverter's own
+        /// version (which changes with every release).
         /// </summary>
         internal static string NormalizedHash(string file, string inputDir)
         {
@@ -71,9 +73,27 @@ namespace RawConverter.Tests
                 {
                     continue;
                 }
-                sha.AppendData(Encoding.UTF8.GetBytes(line.Replace(inputDirFull, "{INPUT_DIR}") + "\n"));
+                sha.AppendData(Encoding.UTF8.GetBytes(WithoutOwnVersion(line).Replace(inputDirFull, "{INPUT_DIR}") + "\n"));
             }
             return Convert.ToHexString(sha.GetHashAndReset()).ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// The line with RawConverter's version replaced by {VERSION}: "H\tExtractorVersion\t1.3.0" in MS1/MS2-style
+        /// headers and &lt;software ... name="RawConverter" version="1.3.0"/&gt; in mzXML. Only these lines, as the
+        /// version's digits could also occur in the data.
+        /// </summary>
+        internal static string WithoutOwnVersion(string line)
+        {
+            if (line.StartsWith("H\tExtractorVersion\t"))
+            {
+                return "H\tExtractorVersion\t{VERSION}";
+            }
+            if (line.Contains("name=\"RawConverter\" version=\""))
+            {
+                return Regex.Replace(line, "name=\"RawConverter\" version=\"[^\"]*\"", "name=\"RawConverter\" version=\"{VERSION}\"");
+            }
+            return line;
         }
 
         internal static string DataDirectory()

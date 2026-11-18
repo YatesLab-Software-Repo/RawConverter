@@ -24,8 +24,10 @@ symbolic links work). The current cases use:
 | `061925_CPP-SCP_E_5_6_5ul_dia_S2-E10_1_383.d` | timsTOF DIA is rejected (`TimsTofTests`) | `/data/local/project_data/sage/0207Test/` |
 
 Before hashing, the outputs are normalised: `H	Creation Date` lines are dropped, the input folder path
-is replaced with `{INPUT_DIR}`, and mzXML `<offset>`, `<indexOffset>` and `<sha1>` lines are dropped
-(they change with the length of the path).
+is replaced with `{INPUT_DIR}`, mzXML `<offset>`, `<indexOffset>` and `<sha1>` lines are dropped
+(they change with the length of the path), and RawConverter's own version (`H	ExtractorVersion` and the mzXML
+`<software name="RawConverter" version=...>`) is replaced with `{VERSION}`, so a new version number does not change
+the hashes.
 
 The reference hashes were recorded from the pre-restructure `RawConverterDotNetCore` build (commit
 `2c3d1f6` plus its uncommitted mzML fixes). When a case fails, the test keeps its outputs in a temporary folder
