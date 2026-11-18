@@ -172,6 +172,25 @@ namespace RawConverter.Tests
         }
 
         [Fact]
+        public async Task PackingIsGreyedOutUnlessTheInputsAreDFolders()
+        {
+            OutputFormatChoice pack = _vm.OutputFormats.Single(c => c.Name == MainWindowViewModel.DTarFormat);
+            Assert.False(pack.IsEnabled);   // no input yet
+            Assert.All(_vm.OutputFormats.Where(c => c != pack), c => Assert.True(c.IsEnabled));
+
+            string d = Path.Combine(_dir, "sample.d");
+            Directory.CreateDirectory(d);
+            await _vm.AddInputs(new[] { d });
+            Assert.True(pack.IsEnabled);
+
+            _vm.SelectedInputFile = d;
+            _vm.RemoveSelectedInput();
+            Assert.False(pack.IsEnabled);
+            await _vm.AddInputs(new[] { Path.Combine(_dir, "a.raw") });
+            Assert.False(pack.IsEnabled);
+        }
+
+        [Fact]
         public async Task PackingIsRefusedForOtherInput()
         {
             await _vm.AddInputs(new[] { Path.Combine(_dir, "a.raw") });

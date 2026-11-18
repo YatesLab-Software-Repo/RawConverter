@@ -97,7 +97,22 @@
         <TextBlock Canvas.Left="6" Canvas.Top="70" Text="Output Formats: " />
         <ComboBox Canvas.Left="130" Canvas.Top="66" Width="262" Height="21"
                   ItemsSource="{Binding OutputFormats}" SelectedIndex="{Binding OutputFormatIndex}"
-                  PlaceholderText="Choose the output format..." />
+                  PlaceholderText="Choose the output format...">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:OutputFormatChoice">
+              <TextBlock Text="{Binding Name}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+          <!-- entries that do not suit the inputs (packing, unless they are .d folders) are greyed out; -->
+          <ComboBox.Styles>
+            <Style Selector="ComboBoxItem" x:DataType="vm:OutputFormatChoice">
+              <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+            </Style>
+            <Style Selector="ComboBoxItem:disabled">
+              <Setter Property="Foreground" Value="#A0A0A0" />
+            </Style>
+          </ComboBox.Styles>
+        </ComboBox>
         <!-- the drop-down chooses the format; only "MS1, MS2, and MS3" has choices, beside it; -->
         <CheckBox Canvas.Left="411" Canvas.Top="64" Content="MS1" IsChecked="{Binding Ms1Checked}" IsEnabled="{Binding Ms1Enabled}"
                   IsVisible="{Binding ShowMsLevelChoices}" />

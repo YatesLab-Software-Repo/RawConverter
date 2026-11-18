@@ -25,6 +25,23 @@ namespace RawConverter.Gui.ViewModels
     /// <summary>
     /// State and behaviour of the main window, ported from the WinForms RawConverterGUI.
     /// </summary>
+    /// <summary>
+    /// One entry of the output-format drop-down; a disabled entry is greyed out and cannot be chosen.
+    /// </summary>
+    public partial class OutputFormatChoice : ObservableObject
+    {
+        public OutputFormatChoice(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
+
+        [ObservableProperty] private bool _isEnabled = true;
+
+        public override string ToString() => Name;
+    }
+
     public partial class MainWindowViewModel : ObservableObject
     {
         public const string Ms123Format = "MS1, MS2, and MS3";
@@ -41,6 +58,7 @@ namespace RawConverter.Gui.ViewModels
         public MainWindowViewModel(IDialogService dialogs)
         {
             _dialogs = dialogs;
+            DTarChoice.IsEnabled = false;   // until .d folders are added;
 
             // initial state of the legacy window;
             IsDda = true;
@@ -54,7 +72,14 @@ namespace RawConverter.Gui.ViewModels
 
         public ObservableCollection<string> InputFiles { get; } = new ObservableCollection<string>();
         public ObservableCollection<string> LogLines { get; } = new ObservableCollection<string>();
-        public string[] OutputFormats => OutputFormatChoices;
+        /// <summary>
+        /// The output-format drop-down's entries; "Pack .d folders into .d.tar" is greyed out unless the inputs are
+        /// timsTOF .d folders.
+        /// </summary>
+        public IReadOnlyList<OutputFormatChoice> OutputFormats { get; } =
+            OutputFormatChoices.Select(name => new OutputFormatChoice(name)).ToList();
+
+        private OutputFormatChoice DTarChoice => OutputFormats.First(c => c.Name == DTarFormat);
 
         [ObservableProperty] private string _selectedInputFile;
         [ObservableProperty] private string _outputDirectory = "";
@@ -133,6 +158,7 @@ namespace RawConverter.Gui.ViewModels
                 SetOutputChoices(false, false, false, false, false, false, false);
                 SetOutputChecks(false, false, false, false, false, false, false);
                 DTarChecked = false;
+                DTarChoice.IsEnabled = IsFormat(".d");
             }
         }
 
